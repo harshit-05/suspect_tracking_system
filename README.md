@@ -1,4 +1,4 @@
-# CCTV Tracking System
+# CCTV based Suspect Tracking System
 
 This repository contains a system for real-time object detection and tracking in video feeds, designed for CCTV surveillance applications. It uses the YOLOv8 model for efficient object detection and integrates various tracking algorithms like DeepSORT and ByteTrack to maintain unique identities for detected objects across frames.
 
