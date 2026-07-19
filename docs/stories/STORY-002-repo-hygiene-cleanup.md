@@ -4,7 +4,7 @@ title: Repo hygiene cleanup — dead files, poisoned results
 phase: 0
 priority: P0
 srs_refs: [M6, L1]
-status: todo
+status: done   # implemented + Stage-D reviewed 2026-07-19: all targets grep-verified dead, deleted; 3 modules via git rm (recoverable); compiles clean
 depends_on: [STORY-000, STORY-003]
 ---
 

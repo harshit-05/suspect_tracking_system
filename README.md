@@ -36,8 +36,7 @@ A key feature of this system is its interactive suspect tracking. Users can clic
 │   ├── deepsort_wrapper.py # Wrapper for the DeepSORT tracking algorithm
 │   └── bytetrack_wrapper.py  # Wrapper for the ByteTrack tracking algorithm
 └── utils/
-    ├── draw_utils.py       # Functions for drawing bounding boxes, labels, and the PiP view
-    └── video_io.py         # Video input/output helper functions
+    └── draw_utils.py       # Functions for drawing bounding boxes, labels, and the PiP view
 ```
 
 ## Setup and Installation
