@@ -4,7 +4,7 @@ title: Stabilize git state — commit drift, resolve phantom tree, stop tracking
 phase: 0
 priority: P0
 srs_refs: [M6, DEV-2 (partial)]
-status: review   # implemented 2026-07-19; operator decisions: untrack *.pt, commit strongsort deletion, gitignore sample_videos/
+status: done   # implemented 2026-07-19 (operator decisions: untrack *.pt, delete strongsort, gitignore sample_videos/); operator squashed & pushed as 209c468
 depends_on: []
 ---
 

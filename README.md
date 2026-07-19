@@ -48,18 +48,22 @@ A key feature of this system is its interactive suspect tracking. Users can clic
     cd suspect_tracking_system
     ```
 
-2. **Install the required dependencies:**
-    It is recommended to use a virtual environment.
+2. **Install the required dependencies** (Python 3.12, managed with [uv](https://docs.astral.sh/uv/)):
     ```bash
-    pip install -r requirements.txt
+    uv venv --python 3.12 .venv
+    uv pip install -r requirements.txt        # GPU machine (CUDA wheels)
+    # CPU-only machine instead:
+    # uv pip install -r requirements.txt \
+    #     --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
     ```
-    If a `requirements.txt` is not available, install the packages manually:
-    ```bash
-    pip install torch ultralytics opencv-python deep_sort_realtime numpy
-    ```
+    See the header of [`requirements.txt`](requirements.txt) for details, including
+    why `yolox` is deliberately excluded (so `main.py` cannot run until the Phase-1
+    ByteTrack fix; the DeepSORT evaluation pipeline works).
 
 3. **Model:**
-    The pre-trained `yolov8m.pt` model is included in the repository for convenience and research use. Please check [Ultralytics YOLO license](https://github.com/ultralytics/yolov8) for details.
+    YOLO weights (`yolov8m.pt` etc.) are downloaded automatically by `ultralytics` on
+    first use — they are not committed to git. Please check the
+    [Ultralytics YOLO license](https://github.com/ultralytics/ultralytics) for details.
 
 ## Usage
 

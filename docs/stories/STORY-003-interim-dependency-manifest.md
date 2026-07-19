@@ -4,7 +4,7 @@ title: Interim dependency manifest + pinned Python environment
 phase: 0
 priority: P0
 srs_refs: [C5, "NFR-REP-1 (partial — full uv/pyproject.toml migration is Phase 2)"]
-status: todo
+status: review   # implemented 2026-07-19: Python 3.12.13 venv via uv, 11 deps pinned, cold-install proven, yolox excluded per C4
 depends_on: [STORY-000]
 ---
 
