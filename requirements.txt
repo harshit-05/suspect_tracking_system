@@ -21,6 +21,8 @@ ultralytics==8.4.102
 opencv-python==5.0.0.93
 numpy==2.4.4
 deep-sort-realtime==1.3.2
+supervision==0.29.1
+trackers==2.5.0.post0
 deap==1.4.4
 matplotlib==3.11.1
 tqdm==4.69.0
@@ -31,11 +33,9 @@ natsort==8.4.0
 motmetrics @ git+https://github.com/cheind/py-motmetrics@e5ae766fab03b804f485d7c95ee1809b94d32dcc
 
 # --- deliberately excluded ---
-# yolox: imported only by trackers/bytetrack_wrapper.py, which audit finding C4
-# shows calls BYTETracker with a wrong constructor and update() signature — it
-# never worked against any stock YOLOX release, so there is no "known-good"
-# version to record. YOLOX is also awkward to pip-install (no maintained wheel
-# for modern Python). Consequently bytetrack_wrapper.py and main.py (which
-# imports it) do NOT import in this environment — accepted and documented.
-# Phase 1 (SRS FR-TRK-2) replaces the wrapper with the `supervision` library's
-# maintained ByteTrack; do not install yolox in the meantime.
+# yolox: the original bytetrack wrapper called it with a wrong constructor and
+# update() signature (audit C4) — it never worked against any stock YOLOX
+# release. STORY-007 replaced it: ByteTrack now comes from the maintained
+# roboflow `trackers` package (supervision's own ByteTrack is deprecated,
+# removed in v0.30; `supervision` stays pinned for its Detections type).
+# Do not install yolox.

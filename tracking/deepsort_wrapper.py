@@ -36,14 +36,17 @@ class TrackByDetection:
         if self.frame_id % self.skip_interval != 0:
             return []
 
-        if not detections:
+        if len(detections) == 0:
             return []
 
         input_dets = []
         for d in detections:
             if len(d) < 5:
                 continue
-            bbox = [int(d[0]), int(d[1]), int(d[2]), int(d[3])]
+            # deep_sort_realtime expects [left, top, width, height], NOT xyxy —
+            # passing xyxy here corrupted every track box (found by STORY-006's
+            # first real measurement)
+            bbox = [int(d[0]), int(d[1]), int(d[2] - d[0]), int(d[3] - d[1])]
             conf = float(d[4])
             input_dets.append((bbox, conf))
 

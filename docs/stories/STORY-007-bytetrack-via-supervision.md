@@ -4,7 +4,7 @@ title: ByteTrack via supervision + tracker selection in demo and evaluator
 phase: 1
 priority: P0
 srs_refs: [C4, H2, FR-TRK-1, FR-TRK-2, FR-TRK-3, TST-4 (seed), "H3 (STORY-004 deferred runtime check)"]
-status: todo
+status: review   # implemented 2026-07-20: roboflow `trackers` ByteTrack (operator-approved over deprecated sv.ByteTrack); deepsort ltwh fix; local pkg renamed trackers/->tracking/ (shadowed pip pkg); main.py ran end-to-end first time (50 frames)
 depends_on: [STORY-003]
 ---
 

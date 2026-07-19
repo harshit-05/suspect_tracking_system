@@ -24,8 +24,8 @@ deferred runtime check; STORY-006 supersedes STORY-005's mock-metrics caveat.
 
 | # | Story | Title | Priority | SRS refs | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | [STORY-006](STORY-006-real-mot-metrics.md) | Real MOTA/IDF1 via motmetrics — delete mock formula | P0 | C1, FR-EVAL-1 (partial), ML-1 | review |
-| 2 | [STORY-007](STORY-007-bytetrack-via-supervision.md) | ByteTrack via supervision + tracker selection | P0 | C4, H2, FR-TRK-1..3, TST-4 | todo |
+| 1 | [STORY-006](STORY-006-real-mot-metrics.md) | Real MOTA/IDF1 via motmetrics — delete mock formula | P0 | C1, FR-EVAL-1 (partial), ML-1 | **done** (committed `4ba5231`) |
+| 2 | [STORY-007](STORY-007-bytetrack-via-supervision.md) | ByteTrack via roboflow trackers + tracker selection | P0 | C4, H2, FR-TRK-1..3, TST-4 | review |
 | 3 | [STORY-008](STORY-008-thread-embedder-and-device.md) | Thread embedder AND device end-to-end | P0 | C3, FR-TRK-4, FR-OPT-5 | todo |
 | 4 | [STORY-009](STORY-009-optimizer-scoring-fixes.md) | Pareto dominance, un-inverted FPS, memoization, seeds | P0 | H4, FR-OPT-1/4/6, NFR-PERF-1 | todo |
 | 5 | [STORY-010](STORY-010-hota-via-trackeval.md) | HOTA via TrackEval | P0 | FR-EVAL-1 (completes) | todo |

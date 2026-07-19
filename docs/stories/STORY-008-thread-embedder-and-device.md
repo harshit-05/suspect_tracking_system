@@ -29,8 +29,10 @@ Two facts verified 2026-07-19:
 
 ## Acceptance Criteria
 
-- [ ] `evaluate_pipeline` accepts `embedder`; `trackers/deepsort_wrapper.py` forwards
-      it (plus `embedder_gpu` derived from `device`) to `DeepSort`.
+- [ ] `evaluate_pipeline` accepts `embedder`; `tracking/deepsort_wrapper.py` forwards
+      it (plus `embedder_gpu` derived from `device`) to `DeepSort`. (The local
+      package was renamed `trackers/` → `tracking/` in STORY-007 — it shadowed the
+      pip `trackers` package.)
 - [ ] All three optimizers accept and forward `embedder` and `device` to every
       `evaluate_pipeline` call (same pattern as `video_path` in STORY-001).
 - [ ] `batch_runner.py`'s embedder list replaced with real `deep_sort_realtime`
@@ -59,7 +61,7 @@ is enough to prove it end-to-end.
 
 ```bash
 .venv/bin/python - <<'EOF'
-from trackers.deepsort_wrapper import TrackByDetection
+from tracking.deepsort_wrapper import TrackByDetection
 for emb in ["mobilenet", "torchreid"]:          # final set per operator decision
     t = TrackByDetection(0.3, 320, 0.5, 1, embedder=emb, device="cpu")
     print(emb, "->", type(t.tracker.embedder).__name__)

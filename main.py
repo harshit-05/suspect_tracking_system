@@ -5,8 +5,7 @@ import time
 from detectors.yolo_detector import YOLODetector
 import numpy as np
 
-# from trackers.deepsort_wrapper import TrackByDetection
-from trackers.bytetrack_wrapper import TrackByDetection
+from tracking import make_tracker
 from utils.draw_utils import draw_tracks, draw_metrics
 
 # --- Gloabal variable  to store suspect's id and last frame's tracks
@@ -42,10 +41,11 @@ def select_suspect_callback(event, x, y, flags, param):
             print("[INFO] Suspect deselected.")
 
 
-# --- Paths ---
+# --- Paths (env-overridable until the Phase-2 CLI lands) ---
 model_name = "yolov8l.pt"
-input_path = os.path.join("sample_videos", "mot20-05sample.mp4")
-output_path = os.path.join("results", "output.mp4")
+input_path = os.environ.get("INPUT_PATH", os.path.join("sample_videos", "mot20-05sample.mp4"))
+output_path = os.environ.get("OUTPUT_PATH", os.path.join("results", "output.mp4"))
+os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
 
 # --- Config ---
@@ -53,12 +53,20 @@ conf_thresh = 0.3
 img_size = 640
 iou_thresh = 0.5
 skip_interval = 1
+tracker_name = os.environ.get("TRACKER", "bytetrack")
+show_display = bool(os.environ.get("DISPLAY"))
 
 # --- Init Detector + Tracker ---
 detector = YOLODetector(
     model_name=model_name, img_size=img_size, conf_thresh=conf_thresh
 )
-tracker = TrackByDetection(conf_thresh, img_size, iou_thresh, skip_interval)
+tracker = make_tracker(
+    tracker_name,
+    conf_thresh=conf_thresh,
+    img_size=img_size,
+    iou_thresh=iou_thresh,
+    skip_interval=skip_interval,
+)
 
 # --- Init Video Capture ---
 cap = cv2.VideoCapture(input_path)
@@ -78,9 +86,10 @@ if not out.isOpened():
 
 # --- Setting up window and Mouse Callback
 window_name = "Live Tracking"
-cv2.namedWindow(window_name)
-cv2.setMouseCallback(window_name, select_suspect_callback)
-print("\n[INFO] Click on a person's box to mark them as a suspect.")
+if show_display:
+    cv2.namedWindow(window_name)
+    cv2.setMouseCallback(window_name, select_suspect_callback)
+    print("\n[INFO] Click on a person's box to mark them as a suspect.")
 
 # --- Tracking Loop ---
 frame_count = 0
@@ -136,9 +145,10 @@ try:
         frame = draw_metrics(frame, fps, len(tracks))
 
         out.write(frame)
-        cv2.imshow(window_name, frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        if show_display:
+            cv2.imshow(window_name, frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 finally:
     # --- Cleanup (runs on every exit path, including Ctrl-C) ---
     cap.release()

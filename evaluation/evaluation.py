@@ -3,7 +3,7 @@ import os
 import cv2
 import time
 from detectors.yolo_detectors import YOLODetector
-from trackers.deepsort_wrapper import TrackByDetection  # if using Deep SORT
+from tracking import make_tracker
 from evaluation.mot_metrics import compute_mot_metrics
 
 
@@ -12,6 +12,7 @@ def evaluate_pipeline(
     device="cuda",
     video_path="sample_videos/mot20-05sample.mp4",
     gt_path="datasets/MOT20/train/MOT20-05/gt/gt.txt",
+    tracker="deepsort",
 ):
     if not os.path.exists(gt_path):
         raise FileNotFoundError(
@@ -30,7 +31,8 @@ def evaluate_pipeline(
         device=device,  # ✅ GPU-compatible
     )
 
-    tracker = TrackByDetection(
+    tracker_obj = make_tracker(
+        tracker,
         conf_thresh=config["conf_thresh"],
         img_size=int(config["img_size"]),
         iou_thresh=config["iou_thresh"],
@@ -51,7 +53,7 @@ def evaluate_pipeline(
         start = time.time()
         detections = detector.detect(frame)
         formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
-        tracks = tracker.update(formatted_dets, frame)
+        tracks = tracker_obj.update(formatted_dets, frame)
         end = time.time()
 
         total_time += end - start
