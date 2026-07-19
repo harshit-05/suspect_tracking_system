@@ -10,20 +10,26 @@ Dispatch strictly top-to-bottom unless a story says otherwise.
 | # | Story | Title | Priority | SRS refs | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | [STORY-000](STORY-000-stabilize-git-state.md) | Stabilize git state — commit drift, resolve phantom tree | P0 | M6, DEV-2 (partial) | **done** (operator committed & pushed as `209c468`, 2026-07-19) |
-| 2 | [STORY-003](STORY-003-interim-dependency-manifest.md) | Interim dependency manifest + pinned Python env | P0 | C5, NFR-REP-1 (partial) | review |
-| 3 | [STORY-002](STORY-002-repo-hygiene-cleanup.md) | Repo hygiene cleanup — dead files, poisoned results | P0 | M6, L1 | **done** (Stage-D reviewed 2026-07-19) |
-| 4 | [STORY-005](STORY-005-test-fixture-clip.md) | Tiny test fixture clip + first smoke test | P0 | TST-1 | review |
-| 5 | [STORY-004](STORY-004-fix-writer-fourcc-and-checks.md) | Fix VideoWriter fourcc + open checks (static verify) | P0 | H3, FR-DEMO-3 (partial) | review |
+| 2 | [STORY-003](STORY-003-interim-dependency-manifest.md) | Interim dependency manifest + pinned Python env | P0 | C5, NFR-REP-1 (partial) | **done** (committed `3cb7366`) |
+| 3 | [STORY-002](STORY-002-repo-hygiene-cleanup.md) | Repo hygiene cleanup — dead files, poisoned results | P0 | M6, L1 | **done** (committed `1d4eb77`) |
+| 4 | [STORY-005](STORY-005-test-fixture-clip.md) | Tiny test fixture clip + first smoke test | P0 | TST-1 | **done** (committed `5c23ca6`) |
+| 5 | [STORY-004](STORY-004-fix-writer-fourcc-and-checks.md) | Fix VideoWriter fourcc + open checks (static verify) | P0 | H3, FR-DEMO-3 (partial) | **done** (committed `9a00c82`; runtime check → STORY-007) |
 | — | [STORY-001](STORY-001-fix-eval-video-path.md) | Fix evaluation entry point — real path + fail-fast guards | P0 | C2, FR-EVAL-2 | **done** (implemented by agent session 2026-07-19; verified by inspection, runtime check deferred to STORY-005) |
 
 ## Phase 1 — Make the numbers real
 
-Not yet sharded. Run Stage B of `docs/WORKFLOW.md` against SRS §13 Phase 1 once Phase 0
-is `done`. Carry-over items already known:
+Sharded 2026-07-19 (Stage B; operator waived a separate Stage-A pass — SRS §13 Phase 1
+followed directly). Phase-0 carry-overs are embedded: STORY-007 contains STORY-004's
+deferred runtime check; STORY-006 supersedes STORY-005's mock-metrics caveat.
 
-- ByteTrack fix story must include STORY-004's deferred runtime verification
-  (run `main.py` end-to-end, validate output video).
-- Real-metrics story supersedes the mock-formula caveat noted in STORY-005.
+| # | Story | Title | Priority | SRS refs | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | [STORY-006](STORY-006-real-mot-metrics.md) | Real MOTA/IDF1 via motmetrics — delete mock formula | P0 | C1, FR-EVAL-1 (partial), ML-1 | todo |
+| 2 | [STORY-007](STORY-007-bytetrack-via-supervision.md) | ByteTrack via supervision + tracker selection | P0 | C4, H2, FR-TRK-1..3, TST-4 | todo |
+| 3 | [STORY-008](STORY-008-thread-embedder-and-device.md) | Thread embedder AND device end-to-end | P0 | C3, FR-TRK-4, FR-OPT-5 | todo |
+| 4 | [STORY-009](STORY-009-optimizer-scoring-fixes.md) | Pareto dominance, un-inverted FPS, memoization, seeds | P0 | H4, FR-OPT-1/4/6, NFR-PERF-1 | todo |
+| 5 | [STORY-010](STORY-010-hota-via-trackeval.md) | HOTA via TrackEval | P0 | FR-EVAL-1 (completes) | todo |
+| 6 | [STORY-011](STORY-011-sanity-combo-run.md) | Sanity end-to-end combo run (small budget, fixture) | P0 | Phase 1.9, ML-1, TST-5 | todo |
 
 ## Phase 2 — Restructure to target architecture
 
