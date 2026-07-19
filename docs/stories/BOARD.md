@@ -12,7 +12,7 @@ Dispatch strictly top-to-bottom unless a story says otherwise.
 | 1 | [STORY-000](STORY-000-stabilize-git-state.md) | Stabilize git state — commit drift, resolve phantom tree | P0 | M6, DEV-2 (partial) | **done** (operator committed & pushed as `209c468`, 2026-07-19) |
 | 2 | [STORY-003](STORY-003-interim-dependency-manifest.md) | Interim dependency manifest + pinned Python env | P0 | C5, NFR-REP-1 (partial) | review |
 | 3 | [STORY-002](STORY-002-repo-hygiene-cleanup.md) | Repo hygiene cleanup — dead files, poisoned results | P0 | M6, L1 | **done** (Stage-D reviewed 2026-07-19) |
-| 4 | [STORY-005](STORY-005-test-fixture-clip.md) | Tiny test fixture clip + first smoke test | P0 | TST-1 | todo |
+| 4 | [STORY-005](STORY-005-test-fixture-clip.md) | Tiny test fixture clip + first smoke test | P0 | TST-1 | review |
 | 5 | [STORY-004](STORY-004-fix-writer-fourcc-and-checks.md) | Fix VideoWriter fourcc + open checks (static verify) | P0 | H3, FR-DEMO-3 (partial) | todo |
 | — | [STORY-001](STORY-001-fix-eval-video-path.md) | Fix evaluation entry point — real path + fail-fast guards | P0 | C2, FR-EVAL-2 | **done** (implemented by agent session 2026-07-19; verified by inspection, runtime check deferred to STORY-005) |
 

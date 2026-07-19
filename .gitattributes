@@ -1,2 +1,4 @@
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.pt filter=lfs diff=lfs merge=lfs -text
+# Tiny test fixtures live in plain git, not LFS (STORY-005)
+tests/data/*.mp4 -filter -diff -merge text=auto

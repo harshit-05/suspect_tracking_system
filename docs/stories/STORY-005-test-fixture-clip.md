@@ -4,7 +4,7 @@ title: Create tiny test fixture clip + first smoke test
 phase: 0
 priority: P0
 srs_refs: [TST-1, NFR-PERF (verification-cost rule in WORKFLOW.md)]
-status: todo
+status: review   # implemented 2026-07-19: 50-frame/955KB fixture (plain git), smoke test passes in 16s, FPS=4.97; also closes STORY-001's deferred runtime check
 depends_on: [STORY-003]
 ---
 
