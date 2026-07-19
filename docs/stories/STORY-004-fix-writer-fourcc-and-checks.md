@@ -4,7 +4,7 @@ title: Fix VideoWriter fourcc + open checks in main.py
 phase: 0
 priority: P0
 srs_refs: [H3, "FR-DEMO-3 (partial — full app-class restructure is Phase 2)"]
-status: todo
+status: review   # implemented 2026-07-19: fourcc mp4v, writer isOpened() raise, try/finally cleanup; static-verified (runtime deferred to Phase-1 ByteTrack story per BOARD.md)
 depends_on: [STORY-000]
 ---
 

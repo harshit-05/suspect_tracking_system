@@ -72,8 +72,10 @@ height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # --- Init Video Writer ---
 out = cv2.VideoWriter(
-    output_path, cv2.VideoWriter_fourcc(*"mp0v"), fps_input, (width, height)
+    output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps_input, (width, height)
 )
+if not out.isOpened():
+    raise IOError(f"Cannot open video writer: {output_path}")
 
 # --- Setting up window and Mouse Callback
 window_name = "Live Tracking"
@@ -88,63 +90,64 @@ all_tracks = []
 
 print("[INFO] Starting tracking... Press 'q' to quit.")
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+try:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    start = time.time()
+        start = time.time()
 
-    detections = detector.detect(frame)
-    # formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
-    formatted_dets = np.array(
-        [d[:5] for d in detections if d[5] == 0], dtype=np.float32
-    )
-    """
-    formatted_dets = [
-        ([d[0], d[1], d[2] - d[0], d[3] - d[1]], d[4], "person")
-        for d in detections
-        if d[5] == 0
-    ]
-    """
-    """
-    formatted_dets = []
-    for d in detections:
-        if d[5] == 0:
-            x1, y1, x2, y2 = d[:4]
-            w, h = x2 - x1, y2 - y1
-            formatted_dets.append([[x1, y1, w, h], d[4]])
-    """
-    # tracker.update() used to return  list of track  objects
-    tracks = tracker.update(formatted_dets, frame)
-    end = time.time()
-    """
-    processed_tracks = []
-    for t in track_objects:
-        #t.to_ltrb() gets the bounding box in coordinate format
-        processed_tracks.append((t.track_id, t.to_ltrv()))
-    """
-    # --- Updating global tracks for the callback
-    g_last_tracks = tracks
-    all_tracks.extend(tracks)
-    frame_count += 1
-    total_time += end - start
+        detections = detector.detect(frame)
+        # formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
+        formatted_dets = np.array(
+            [d[:5] for d in detections if d[5] == 0], dtype=np.float32
+        )
+        """
+        formatted_dets = [
+            ([d[0], d[1], d[2] - d[0], d[3] - d[1]], d[4], "person")
+            for d in detections
+            if d[5] == 0
+        ]
+        """
+        """
+        formatted_dets = []
+        for d in detections:
+            if d[5] == 0:
+                x1, y1, x2, y2 = d[:4]
+                w, h = x2 - x1, y2 - y1
+                formatted_dets.append([[x1, y1, w, h], d[4]])
+        """
+        # tracker.update() used to return  list of track  objects
+        tracks = tracker.update(formatted_dets, frame)
+        end = time.time()
+        """
+        processed_tracks = []
+        for t in track_objects:
+            #t.to_ltrb() gets the bounding box in coordinate format
+            processed_tracks.append((t.track_id, t.to_ltrv()))
+        """
+        # --- Updating global tracks for the callback
+        g_last_tracks = tracks
+        all_tracks.extend(tracks)
+        frame_count += 1
+        total_time += end - start
 
-    # --- Draw + Show ---
-    frame = draw_tracks(frame, tracks, suspect_id)
-    fps = frame_count / total_time if total_time > 0 else 0
-    mota, idf1 = compute_mock_metrics(all_tracks)
-    frame = draw_metrics(frame, mota, idf1, fps)
+        # --- Draw + Show ---
+        frame = draw_tracks(frame, tracks, suspect_id)
+        fps = frame_count / total_time if total_time > 0 else 0
+        mota, idf1 = compute_mock_metrics(all_tracks)
+        frame = draw_metrics(frame, mota, idf1, fps)
 
-    out.write(frame)
-    cv2.imshow(window_name, frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-# --- Cleanup ---
-cap.release()
-out.release()
-cv2.destroyAllWindows()
+        out.write(frame)
+        cv2.imshow(window_name, frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+finally:
+    # --- Cleanup (runs on every exit path, including Ctrl-C) ---
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
 print(f"[✓] Tracking complete. Output saved to: {output_path}")
 print(f"[INFO] Average FPS: {frame_count / total_time:.2f}")
 print(f"[INFO] Total frames processed: {frame_count}")
