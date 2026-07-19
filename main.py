@@ -1,11 +1,12 @@
-#main.py
+# main.py
 import os
 import cv2
 import time
-import numpy as np
 from detectors.yolo_detector import YOLODetector
-from trackers.deepsort_wrapper import TrackByDetection
-#from trackers.bytetrack_wrapper import TrackByDetection
+import numpy as np
+
+# from trackers.deepsort_wrapper import TrackByDetection
+from trackers.bytetrack_wrapper import TrackByDetection
 from utils.draw_utils import draw_tracks, draw_metrics
 from evaluation.evaluation import compute_mock_metrics
 
@@ -13,16 +14,17 @@ from evaluation.evaluation import compute_mock_metrics
 suspect_id = None
 g_last_tracks = []
 
+
 def select_suspect_callback(event, x, y, flags, param):
     """mouse callback fn to select or deselect a suspect"""
-    global  suspect_id
+    global suspect_id
     # Check for left mouse button click
     if event == cv2.EVENT_LBUTTONDOWN:
         clicked_on_person = False
         # Iterate over the tracks from the last frame
-        for tid, bbox in g_last_tracks: 
-            #bbox = track.to_ltrb() # [x1, y1, x2, y2]
-            #track_id = track.track_id
+        for tid, bbox in g_last_tracks:
+            #            bbox = track.to_ltrb() # [x1, y1, x2, y2]
+            #            track_id = track.track_id
             # Check if the click was inside this track's bounding box
             if bbox[0] < x < bbox[2] and bbox[1] < y < bbox[3]:
                 if suspect_id == tid:
@@ -40,22 +42,24 @@ def select_suspect_callback(event, x, y, flags, param):
             suspect_id = None
             print("[INFO] Suspect deselected.")
 
+
 # --- Paths ---
-model_name = "yolov8m.pt"
-input_path = os.path.join("sample_videos", "mot20-02sample.mp4")
-output_path = os.path.join("results","output_tracking.mp4")
+model_name = "yolov8l.pt"
+input_path = os.path.join("sample_videos", "mot20-05sample.mp4")
+output_path = os.path.join("results", "output.mp4")
 
 
 # --- Config ---
-conf_thresh = 0.35
+conf_thresh = 0.3
 img_size = 640
-iou_thresh = 0.45
+iou_thresh = 0.5
 skip_interval = 1
 
 # --- Init Detector + Tracker ---
-detector = YOLODetector(model_name=model_name, img_size=img_size, conf_thresh=conf_thresh)
-device = detector.device
-tracker = TrackByDetection(conf_thresh=conf_thresh, img_size=img_size, iou_thresh=iou_thresh, skip_interval=skip_interval, device=device)
+detector = YOLODetector(
+    model_name=model_name, img_size=img_size, conf_thresh=conf_thresh
+)
+tracker = TrackByDetection(conf_thresh, img_size, iou_thresh, skip_interval)
 
 # --- Init Video Capture ---
 cap = cv2.VideoCapture(input_path)
@@ -68,10 +72,7 @@ height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # --- Init Video Writer ---
 out = cv2.VideoWriter(
-    output_path,
-    cv2.VideoWriter_fourcc(*'mp4v'),
-    fps_input,
-    (width, height)
+    output_path, cv2.VideoWriter_fourcc(*"mp0v"), fps_input, (width, height)
 )
 
 # --- Setting up window and Mouse Callback
@@ -93,14 +94,12 @@ while True:
         break
 
     start = time.time()
+
     detections = detector.detect(frame)
-    """
+    # formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
     formatted_dets = np.array(
-        [d[:5] for d in detections if d[5] == 0],
+        [d[:5] for d in detections if d[5] == 0], dtype=np.float32
     )
-    """
-    formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
-    
     """
     formatted_dets = [
         ([d[0], d[1], d[2] - d[0], d[3] - d[1]], d[4], "person")
@@ -116,10 +115,7 @@ while True:
             w, h = x2 - x1, y2 - y1
             formatted_dets.append([[x1, y1, w, h], d[4]])
     """
-#    person_detections = [d for d in detections if d[5] == 0]
-#    print(f"Frame {frame_count}:Found {len(person_detections)}person detections.")
-    #tracker.update() used to return  list of track  objects
-#    tracks = tracker.update(person_detections, frame)
+    # tracker.update() used to return  list of track  objects
     tracks = tracker.update(formatted_dets, frame)
     end = time.time()
     """
@@ -132,18 +128,17 @@ while True:
     g_last_tracks = tracks
     all_tracks.extend(tracks)
     frame_count += 1
-    total_time += (end - start)
+    total_time += end - start
 
     # --- Draw + Show ---
     frame = draw_tracks(frame, tracks, suspect_id)
     fps = frame_count / total_time if total_time > 0 else 0
- #   mota, idf1 = compute_mock_metrics(all_tracks)
- #   frame = draw_metrics(frame, mota, idf1, fps)
-    frame = draw_metrics(frame, fps)
+    mota, idf1 = compute_mock_metrics(all_tracks)
+    frame = draw_metrics(frame, mota, idf1, fps)
 
     out.write(frame)
     cv2.imshow(window_name, frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
 # --- Cleanup ---
@@ -155,4 +150,3 @@ print(f"[INFO] Average FPS: {frame_count / total_time:.2f}")
 print(f"[INFO] Total frames processed: {frame_count}")
 print(f"[INFO] Total time taken: {total_time:.2f} seconds")
 print("[INFO] Done.")
-

@@ -2,9 +2,17 @@
 
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
+
 class TrackByDetection:
-    def __init__(self, conf_thresh=0.3, img_size=640, iou_thresh=0.5,
-                 skip_interval=1, appearance_weight=0.6,device='cuda'):
+    def __init__(
+        self,
+        conf_thresh=0.5,
+        img_size=640,
+        iou_thresh=0.5,
+        skip_interval=1,
+        appearance_weight=0.6,
+        device="cuda",
+    ):
         self.conf_thresh = conf_thresh
         self.img_size = img_size
         self.iou_thresh = iou_thresh
@@ -20,7 +28,7 @@ class TrackByDetection:
             nn_budget=100,
             override_track_class=None,
             embedder="mobilenet",
-            half=True
+            half=True,
         )
 
     def update(self, detections, frame):
@@ -29,20 +37,15 @@ class TrackByDetection:
             return []
 
         if not detections:
-            self.tracker.update_tracks([], frame=frame)
             return []
 
         input_dets = []
         for d in detections:
             if len(d) < 5:
                 continue
-            x1, y1, x2, y2 = map(int, d[:4])
-            w = x2 - x1
-            h = y2 - y1
-            #bbox = [int(d[0]), int(d[1]), int(d[2]), int(d[3])]
-            bbox_ltwh = [x1, y1, w, h]
+            bbox = [int(d[0]), int(d[1]), int(d[2]), int(d[3])]
             conf = float(d[4])
-            input_dets.append((bbox_ltwh, conf, "person"))
+            input_dets.append((bbox, conf))
 
         if not input_dets:
             return []

@@ -1,0 +1,6 @@
+# Configuration Parameters
+
+NUM_PARTICLES = 50
+MOTION_STD_DEV = 15
+HISTOGRAM_BINS = 32
+BLOB_MIN_AREA = 500

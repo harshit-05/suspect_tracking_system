@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+
+# Model weights — fetched on first use, never committed (SRS NFR-REP-4)
+*.pt
+
+# Large local data — kept outside git (SRS NFR-REP-5)
+sample_videos/
+datasets/
+
+# Experiment outputs
+results/
+result/

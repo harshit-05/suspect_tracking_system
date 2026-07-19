@@ -1,0 +1,5 @@
+img_size: [320, 640, 960]
+conf_thresh: [0.2, 0.8]
+iou_thresh: [0.3, 0.7]
+skip_interval: [1, 5]
+appearance_weight: [0.0, 1.0]

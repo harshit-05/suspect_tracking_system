@@ -5,15 +5,15 @@ import natsort
 
 #----config----------
 #path to dataset
-image_folder = '/home/harshit/MOT20Det/train/MOT20-02/img1'
+image_folder = '/home/harshit/MOT20Det/train/MOT20-05/img1'
 #output folder
 output_folder = '/home/harshit/cctv_tracking_system/sample_videos'
 os.makedirs(output_folder, exist_ok = True)
 # output filename
-video_name = 'mot20-02sample.mp4'
+video_name = 'mot20-05sample.mp4'
 output_video_path = os.path.join(output_folder, video_name)
 #fps for the mot datadet
-fps = 35
+fps = 25
 #---------------------------
 
 images = glob.glob(os.path.join(image_folder, '*.jpg'))
