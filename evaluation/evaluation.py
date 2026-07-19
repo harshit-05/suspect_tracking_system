@@ -36,7 +36,7 @@ def evaluate_pipeline(
         conf_thresh=config["conf_thresh"],
         img_size=int(config["img_size"]),
         iou_thresh=config["iou_thresh"],
-        skip_interval=int(config["skip_interval"]),
+        skip_interval=int(config.get("skip_interval", 1)),
         appearance_weight=config.get("appearance_weight", 0.6),
         device=device,  # ✅ GPU-compatible
     )

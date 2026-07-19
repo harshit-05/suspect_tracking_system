@@ -1,5 +1,7 @@
 img_size: [320, 640, 960]
 conf_thresh: [0.2, 0.8]
 iou_thresh: [0.3, 0.7]
-skip_interval: [1, 5]
+# skip_interval removed from the search space 2026-07-20: skipped frames drop
+# tracks entirely (audit M5), so exploring it just tanks MOTA by construction.
+# Restore as int_range once STORY-013 implements coast-don't-drop semantics.
 appearance_weight: [0.0, 1.0]

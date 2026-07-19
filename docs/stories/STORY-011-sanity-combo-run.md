@@ -10,6 +10,16 @@ depends_on: [STORY-006, STORY-008, STORY-009]
 
 ## Context
 
+**Gate added by operator review 2026-07-20:** measured recall of stock YOLOv8l on
+MOT20-05 frame 1 is 0.9–4.2% (img_size 320→960) — the crowd is too dense, so
+MOTA/IDF1 are noise-floored near zero and HPO on this footage optimizes noise.
+Before this story runs, acquire a **sparser MOTChallenge sequence** (MOT17-04 or
+MOT17-09: video + GT + fixture slice, mirroring STORY-005/006's process) and run the
+combo on that. motchallenge.net was down 2026-07-19/20; the TrackEval bundle
+(already in scratchpad/datasets) has MOT17 GT but **not** images — images need
+motchallenge.net's return or a mirror. MOT20-05 full-res behavior gets re-checked
+on the GPU box later.
+
 SRS §13 Phase 1 step 9: "Re-run one full combo and sanity-check outputs by eye before
 re-running the matrix." This is the first time detector→tracker→**real metrics**→
 optimizer→logs runs as one system since the audit. Two standing constraints

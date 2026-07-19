@@ -43,6 +43,11 @@ Two facts verified 2026-07-19:
 - [ ] Plumbing proof: constructing the pipeline with `embedder=X` results in the
       underlying `DeepSort` instance actually using X (introspection assert), for
       each embedder in the final set.
+- [ ] `batch_runner.py`'s `DEVICE` double-assignment (lines 18-19, comment-one-out
+      style) replaced by env-driven selection with auto-detect default
+      (`os.environ.get("DEVICE") or ("cuda" if torch.cuda.is_available() else
+      "cpu")`) — operator review finding, 2026-07-20. With device threaded into the
+      optimizers, running any optimizer standalone on this CPU box must work.
 
 ## Out of Scope
 

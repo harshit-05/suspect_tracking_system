@@ -155,7 +155,8 @@ finally:
     out.release()
     cv2.destroyAllWindows()
 print(f"[✓] Tracking complete. Output saved to: {output_path}")
-print(f"[INFO] Average FPS: {frame_count / total_time:.2f}")
+if frame_count and total_time > 0:
+    print(f"[INFO] Average FPS: {frame_count / total_time:.2f}")
 print(f"[INFO] Total frames processed: {frame_count}")
 print(f"[INFO] Total time taken: {total_time:.2f} seconds")
 print("[INFO] Done.")
