@@ -4,7 +4,7 @@ title: Real MOTA/IDF1 via motmetrics — delete the mock formula
 phase: 1
 priority: P0
 srs_refs: [C1, FR-EVAL-1 (partial — HOTA is STORY-010), FR-EVAL-2, ML-1, TST-1]
-status: todo
+status: review   # implemented 2026-07-19: motmetrics (numpy2-fixed git pin), GT from official TrackEval mirror (motchallenge.net was down), GT-vs-GT self-test = 1.0/1.0; discovered deepsort xyxy/ltwh bug -> STORY-007
 depends_on: [STORY-005]
 ---
 

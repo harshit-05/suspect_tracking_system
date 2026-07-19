@@ -8,7 +8,6 @@ import numpy as np
 # from trackers.deepsort_wrapper import TrackByDetection
 from trackers.bytetrack_wrapper import TrackByDetection
 from utils.draw_utils import draw_tracks, draw_metrics
-from evaluation.evaluation import compute_mock_metrics
 
 # --- Gloabal variable  to store suspect's id and last frame's tracks
 suspect_id = None
@@ -86,7 +85,6 @@ print("\n[INFO] Click on a person's box to mark them as a suspect.")
 # --- Tracking Loop ---
 frame_count = 0
 total_time = 0
-all_tracks = []
 
 print("[INFO] Starting tracking... Press 'q' to quit.")
 
@@ -129,15 +127,13 @@ try:
         """
         # --- Updating global tracks for the callback
         g_last_tracks = tracks
-        all_tracks.extend(tracks)
         frame_count += 1
         total_time += end - start
 
-        # --- Draw + Show ---
+        # --- Draw + Show (honest live values only — FR-DEMO-5) ---
         frame = draw_tracks(frame, tracks, suspect_id)
         fps = frame_count / total_time if total_time > 0 else 0
-        mota, idf1 = compute_mock_metrics(all_tracks)
-        frame = draw_metrics(frame, mota, idf1, fps)
+        frame = draw_metrics(frame, fps, len(tracks))
 
         out.write(frame)
         cv2.imshow(window_name, frame)

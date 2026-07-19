@@ -12,7 +12,16 @@ depends_on: [STORY-003]
 
 `trackers/bytetrack_wrapper.py` imports `yolox` (deliberately not installed — see
 requirements.txt) and calls `BYTETracker` with a constructor and `update()` signature
-that match no stock YOLOX release (C4): it has **never worked**. Because of it,
+that match no stock YOLOX release (C4): it has **never worked**.
+
+**Addendum (found by STORY-006's first real measurement, 2026-07-19):** the DeepSORT
+wrapper has its own format bug — `deepsort_wrapper.py:46-48` passes detections to
+`deep_sort_realtime.update_tracks` as **xyxy**, but the library expects
+**[left, top, width, height]**. Confirmed empirically: an 87×188 px detection became a
+927×1045 px track box. Every DeepSORT track ever produced was geometrically wrong
+(real MOTA≈0/IDF1=0 on the fixture). Fix it here (1-line xyxy→ltwh conversion) as part
+of the same-`Detections`-type contract this story owns, and cover it in
+`tests/tracker_contract_test.py` (a track box must roughly match its input detection). Because of it,
 `main.py` cannot even import, which is also why STORY-004's fourcc/cleanup fix could
 only be statically verified. Meanwhile the evaluator runs DeepSORT — so the demo and
 the evaluation pipeline don't even use the same tracker family (H2).

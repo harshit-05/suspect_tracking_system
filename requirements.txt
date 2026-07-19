@@ -26,6 +26,9 @@ matplotlib==3.11.1
 tqdm==4.69.0
 pyyaml==6.0.3
 natsort==8.4.0
+# PyPI motmetrics==1.4.0 uses np.asfarray (removed in NumPy 2) — pin the fixed
+# upstream commit until a release lands (STORY-006):
+motmetrics @ git+https://github.com/cheind/py-motmetrics@e5ae766fab03b804f485d7c95ee1809b94d32dcc
 
 # --- deliberately excluded ---
 # yolox: imported only by trackers/bytetrack_wrapper.py, which audit finding C4

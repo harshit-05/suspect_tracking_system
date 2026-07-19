@@ -30,8 +30,8 @@ def draw_tracks(frame, tracks, suspect_id=None):
         cv2.putText(frame, label, (x1, y1 - baseline), cv2.FONT_HERSHEY_SIMPLEX, font_scale, WHITE, thickness)
     return frame
 
-def draw_metrics(frame, mota, idf1, fps):
-    text = f"MOTA: {mota:.3f}  IDF1: {idf1:.3f}  FPS: {fps:.2f}"
+def draw_metrics(frame, fps, track_count):
+    text = f"FPS: {fps:.2f}  Tracks: {track_count}"
     cv2.putText(frame, text, (10, 25),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, WHITE, 2)
     return frame

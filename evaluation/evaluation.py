@@ -1,18 +1,24 @@
+import os
+
 import cv2
 import time
 from detectors.yolo_detectors import YOLODetector
 from trackers.deepsort_wrapper import TrackByDetection  # if using Deep SORT
+from evaluation.mot_metrics import compute_mot_metrics
 
 
-def compute_mock_metrics(tracks):
-    # You should implement true MOTA and IDF1 calculation if ground truth exists
-    num_tracks = len(tracks)
-    mota = 0.80 + 0.05 * (num_tracks % 5)  # mock value
-    idf1 = 0.75 + 0.03 * (num_tracks % 3)  # mock value
-    return mota, idf1
-
-
-def evaluate_pipeline(config, device="cuda", video_path="sample_videos/mot20-05sample.mp4"):
+def evaluate_pipeline(
+    config,
+    device="cuda",
+    video_path="sample_videos/mot20-05sample.mp4",
+    gt_path="datasets/MOT20/train/MOT20-05/gt/gt.txt",
+):
+    if not os.path.exists(gt_path):
+        raise FileNotFoundError(
+            f"Ground-truth file not found: {gt_path} — MOT20 labels come from "
+            "https://motchallenge.net/data/MOT20Labels.zip (mirror: TrackEval "
+            "data.zip at omnomnom.vision.rwth-aachen.de)"
+        )
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Cannot open video: {video_path}")
@@ -35,7 +41,7 @@ def evaluate_pipeline(config, device="cuda", video_path="sample_videos/mot20-05s
 
     frame_count = 0
     total_time = 0.0
-    all_tracks = []
+    tracks_by_frame = {}
 
     while True:
         ret, frame = cap.read()
@@ -50,7 +56,7 @@ def evaluate_pipeline(config, device="cuda", video_path="sample_videos/mot20-05s
 
         total_time += end - start
         frame_count += 1
-        all_tracks.extend(tracks)
+        tracks_by_frame[frame_count] = tracks
 
     cap.release()
 
@@ -58,6 +64,6 @@ def evaluate_pipeline(config, device="cuda", video_path="sample_videos/mot20-05s
         raise RuntimeError(f"No frames read from video: {video_path}")
 
     avg_fps = frame_count / total_time
-    mota, idf1 = compute_mock_metrics(all_tracks)
+    mota, idf1 = compute_mot_metrics(gt_path, tracks_by_frame)
 
     return mota, idf1, round(avg_fps, 3)
