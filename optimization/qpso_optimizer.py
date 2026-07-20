@@ -1,11 +1,11 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-import numpy as np
 import yaml
 from tqdm import tqdm
 from random import uniform
 from evaluation.evaluation import evaluate_pipeline
+from optimization.objectives import MemoizedObjective, replaces_best, seed_all
 import csv
 
 def load_config(path="optimization/config.yaml"):
@@ -37,20 +37,30 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_path="results/optimization_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
+def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_path="results/optimization_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None, seed=None, objective=None):
+    if seed is not None:
+        seed_all(seed)
+
+    if objective is None:
+        def objective(config):
+            mota, idf1, fps = evaluate_pipeline(
+                config, video_path=video_path, embedder=embedder, device=device
+            )
+            log_to_csv(config, mota, idf1, fps, path=log_path)
+            return mota, idf1, fps
+    obj = MemoizedObjective(objective)
+
     global_best = None
-    global_best_score = (-1, -1, float("inf"))  # MOTA, IDF1, 1/FPS
+    global_best_score = None  # (MOTA, IDF1, FPS), all maximized
     particles = [sample_config(bounds) for _ in range(num_particles)]
 
     for g in range(generations):
         print(f"\n[QPSO] Generation {g+1}/{generations}")
         for i in tqdm(range(num_particles)):
             quantized = quantize_config(particles[i], allowed_values)
-            mota, idf1, fps = evaluate_pipeline(quantized, video_path=video_path, embedder=embedder, device=device)
-            log_to_csv(quantized, mota, idf1, fps, path=log_path)
-            score = (mota, idf1, 1 / max(fps, 1e-3))
+            score = obj(quantized)  # memoized — repeats are free
 
-            if score > global_best_score:
+            if replaces_best(score, global_best_score):
                 global_best_score = score
                 global_best = quantized
 
@@ -63,7 +73,8 @@ def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_
 
     print("\n[✓] Best QPSO Config Found:")
     print(global_best)
-    print("Score (MOTA, IDF1, 1/FPS):", global_best_score)
+    print("Score (MOTA, IDF1, FPS):", global_best_score)
+    print(f"Real evaluations: {obj.evaluations}")
 
     return global_best
 

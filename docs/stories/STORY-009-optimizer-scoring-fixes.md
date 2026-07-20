@@ -4,7 +4,7 @@ title: Fix optimizer scoring — Pareto dominance, un-inverted FPS, memoization,
 phase: 1
 priority: P0
 srs_refs: [H4, FR-OPT-1, FR-OPT-4, FR-OPT-6, NFR-PERF-1, TST-3 (seed)]
-status: todo
+status: review   # implemented 2026-07-20: objectives.py (dominance/memo/seed); QPSO+MOPSO+NSGA un-inverted FPS, memoized, seeded; MOPSO personal-best re-eval removed; synthetic test passes in 2.2s
 depends_on: [STORY-003]
 ---
 

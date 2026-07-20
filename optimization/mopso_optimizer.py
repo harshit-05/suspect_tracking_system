@@ -1,9 +1,9 @@
 import os
 import yaml
-import numpy as np
 from tqdm import tqdm
 from random import uniform
 from evaluation.evaluation import evaluate_pipeline
+from optimization.objectives import MemoizedObjective, replaces_best, seed_all
 import csv
 
 def load_config(path="optimization/config.yaml"):
@@ -34,30 +34,40 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path="results/mopso_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
+def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path="results/mopso_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None, seed=None, objective=None):
+    if seed is not None:
+        seed_all(seed)
+
+    if objective is None:
+        def objective(config):
+            mota, idf1, fps = evaluate_pipeline(
+                config, video_path=video_path, embedder=embedder, device=device
+            )
+            log_to_csv(config, mota, idf1, fps, log_path)
+            return mota, idf1, fps
+    obj = MemoizedObjective(objective)
+
     particles = [sample_particle(bounds) for _ in range(num_particles)]
     velocities = [{k: 0.0 for k in bounds} for _ in range(num_particles)]
     personal_best = list(particles)
+    personal_best_score = [None] * num_particles  # cached — never re-evaluated
     global_best = None
-    global_best_score = (-1, -1, float('inf'))  # MOTA, IDF1, 1/FPS
+    global_best_score = None  # (MOTA, IDF1, FPS), all maximized
 
     for gen in range(generations):
         print(f"\n[MOPSO] Generation {gen + 1}/{generations}")
         for i in tqdm(range(num_particles)):
             config = quantize_config(particles[i], allowed_values)
-            mota, idf1, fps = evaluate_pipeline(config, video_path=video_path, embedder=embedder, device=device)
-            score = (mota, idf1, 1 / max(fps, 1e-3))
-            log_to_csv(config, mota, idf1, fps, log_path)
+            score = obj(config)  # memoized
 
-            # Personal best update
-            p_config = quantize_config(personal_best[i], allowed_values)
-            p_mota, p_idf1, p_fps = evaluate_pipeline(p_config, video_path=video_path, embedder=embedder, device=device)
-            p_score = (p_mota, p_idf1, 1 / max(p_fps, 1e-3))
-            if score > p_score:
+            # Personal best update — compares against the cached score, no
+            # second evaluation (was O(2·particles) per generation, audit H4)
+            if replaces_best(score, personal_best_score[i]):
                 personal_best[i] = particles[i]
+                personal_best_score[i] = score
 
             # Global best update
-            if score > global_best_score:
+            if replaces_best(score, global_best_score):
                 global_best_score = score
                 global_best = particles[i]
 
@@ -73,4 +83,5 @@ def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path
 
     print("\n[✓] Best MOPSO Config Found:")
     print(global_best)
+    print(f"Real evaluations: {obj.evaluations}")
     return global_best

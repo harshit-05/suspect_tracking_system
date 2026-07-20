@@ -26,6 +26,13 @@ optimizers = ["qpso", "nsga", "mopso"]
 DEVICE = os.environ.get("DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def embedder_slug(embedder):
+    """Filesystem-safe stand-in for embedder names like 'clip_ViT-B/32' —
+    the raw '/' would otherwise fragment into a stray results/ subdirectory
+    and corrupt plot filenames (STORY-008 review)."""
+    return embedder.replace("/", "-")
+
+
 def load_config_space(path=config_file):
     with open(path, "r") as f:
         return yaml.safe_load(f)
@@ -48,7 +55,7 @@ def flatten_config_space(config_space):
 
 
 def save_metrics(result, embedder, optimizer):
-    folder = os.path.join(results_dir, embedder, optimizer)
+    folder = os.path.join(results_dir, embedder_slug(embedder), optimizer)
     os.makedirs(folder, exist_ok=True)
     metrics_path = os.path.join(folder, "metrics.json")
     with open(metrics_path, "w") as f:
@@ -70,7 +77,8 @@ def save_metrics(result, embedder, optimizer):
 
 
 def plot_all(embedder, optimizer):
-    path = os.path.join(results_dir, embedder, optimizer, "log.csv")
+    slug = embedder_slug(embedder)
+    path = os.path.join(results_dir, slug, optimizer, "log.csv")
     if not os.path.exists(path):
         print(f"[!] Missing log.csv for {embedder} + {optimizer}")
         return
@@ -83,8 +91,8 @@ def plot_all(embedder, optimizer):
                 idf1_list.append(float(row["IDF1"]))
                 fps_list.append(float(row["FPS"]))
 
-        name_prefix = f"{embedder.replace('v2', '')}_{optimizer}".lower()
-        plot_folder = os.path.join(results_dir, embedder, optimizer)
+        name_prefix = f"{slug.replace('v2', '')}_{optimizer}".lower()
+        plot_folder = os.path.join(results_dir, slug, optimizer)
         plot_pareto_2d(
             mota_list,
             fps_list,
@@ -108,7 +116,7 @@ def run_combo(embedder, optimizer):
     config_space = load_config_space()
     bounds, allowed_values = flatten_config_space(config_space)
 
-    log_path = os.path.join(results_dir, embedder, optimizer, "log.csv")
+    log_path = os.path.join(results_dir, embedder_slug(embedder), optimizer, "log.csv")
 
     if optimizer == "qpso":
         best_config = qpso_optimize(

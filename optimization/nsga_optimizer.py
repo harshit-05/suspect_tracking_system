@@ -1,10 +1,10 @@
 from deap import base, creator, tools, algorithms
 import random
-import numpy as np
 import yaml
 import os
 import csv
 from evaluation.evaluation import evaluate_pipeline
+from optimization.objectives import MemoizedObjective, seed_all
 
 def load_config(path="optimization/config.yaml"):
     with open(path, "r") as f:
@@ -27,22 +27,35 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def run_nsga(bounds, allowed_values, num_individuals=20, generations=50, log_path="results/nsga_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
+def run_nsga(bounds, allowed_values, num_individuals=20, generations=50, log_path="results/nsga_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None, seed=None, objective=None):
+    if seed is not None:
+        seed_all(seed)
     keys = list(bounds.keys())
 
-    # Define DEAP toolbox
-    creator.create("FitnessMulti", base.Fitness, weights=(1.0, 1.0, -1.0))  # maximize MOTA, IDF1; minimize 1/FPS
-    creator.create("Individual", list, fitness=creator.FitnessMulti)
+    # Define DEAP toolbox. All three objectives are MAXIMIZED — MOTA, IDF1, FPS
+    # (FPS un-inverted: was 1/FPS with weight -1.0, a needless double negation).
+    # creator.create raises if a class already exists, so guard for re-runs.
+    if not hasattr(creator, "FitnessMulti"):
+        creator.create("FitnessMulti", base.Fitness, weights=(1.0, 1.0, 1.0))
+    if not hasattr(creator, "Individual"):
+        creator.create("Individual", list, fitness=creator.FitnessMulti)
     toolbox = base.Toolbox()
     toolbox.register("attr_float", make_individual, bounds)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.attr_float)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
+    if objective is None:
+        def objective(config):
+            mota, idf1, fps = evaluate_pipeline(
+                config, video_path=video_path, embedder=embedder, device=device
+            )
+            log_to_csv(config, mota, idf1, fps, log_path)
+            return mota, idf1, fps
+    obj = MemoizedObjective(objective)
+
     def evaluate(ind):
         config = decode_individual(ind, keys, allowed_values)
-        mota, idf1, fps = evaluate_pipeline(config, video_path=video_path, embedder=embedder, device=device)
-        log_to_csv(config, mota, idf1, fps, log_path)
-        return mota, idf1, 1 / max(fps, 1e-3)
+        return obj(config)
 
     toolbox.register("evaluate", evaluate)
     toolbox.register("mate", tools.cxSimulatedBinaryBounded,
