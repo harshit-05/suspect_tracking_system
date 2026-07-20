@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import torch
 from evaluation.evaluation import evaluate_pipeline
 from optimization.qpso_optimizer import qpso_optimize
 from optimization.nsga_optimizer import run_nsga
@@ -13,11 +14,16 @@ results_dir = "results"
 summary_file = os.path.join(results_dir, "summary_table.csv")
 video_path = "sample_videos/mot20-05sample.mp4"
 
-embedders = ["mobilenetv2", "shufflenetv2", "resnet"]
+# Real, installable deep_sort_realtime embedders (STORY-008). torchreid was
+# dropped — it will not pip-install cleanly on Python 3.12 (unbounded native
+# build-dep chain); revisit on the GPU box. CLIP weights auto-download on first
+# use (gitignored).
+embedders = ["mobilenet", "clip_ViT-B/32"]
 optimizers = ["qpso", "nsga", "mopso"]
 
-DEVICE = "cuda"  # ✅ force GPU usage
-DEVICE = "cpu"  # ❌ force CPU usage
+# Device stays config-driven (operator directive): env override wins, else
+# auto-detect. Never hardcoded — this dev box is CPU, deployment is GPU.
+DEVICE = os.environ.get("DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def load_config_space(path=config_file):
@@ -107,7 +113,7 @@ def run_combo(embedder, optimizer):
     if optimizer == "qpso":
         best_config = qpso_optimize(
             bounds, allowed_values, num_particles=20, generations=50, log_path=log_path,
-            video_path=video_path,
+            video_path=video_path, embedder=embedder, device=DEVICE,
         )
     elif optimizer == "nsga":
         best_config = run_nsga(
@@ -117,11 +123,13 @@ def run_combo(embedder, optimizer):
             generations=50,
             log_path=log_path,
             video_path=video_path,
+            embedder=embedder,
+            device=DEVICE,
         )
     elif optimizer == "mopso":
         best_config = run_mopso(
             bounds, allowed_values, num_particles=20, generations=50, log_path=log_path,
-            video_path=video_path,
+            video_path=video_path, embedder=embedder, device=DEVICE,
         )
     else:
         print(f"[✘] Unknown optimizer: {optimizer}")
@@ -133,7 +141,9 @@ def run_combo(embedder, optimizer):
         )
         return
 
-    mota, idf1, fps = evaluate_pipeline(best_config, device=DEVICE, video_path=video_path)
+    mota, idf1, fps = evaluate_pipeline(
+        best_config, device=DEVICE, video_path=video_path, embedder=embedder
+    )
     result = {**best_config, "MOTA": mota, "IDF1": idf1, "FPS": fps}
     save_metrics(result, embedder, optimizer)
     plot_all(embedder, optimizer)

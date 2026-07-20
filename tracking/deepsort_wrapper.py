@@ -12,6 +12,7 @@ class TrackByDetection:
         skip_interval=1,
         appearance_weight=0.6,
         device="cuda",
+        embedder="mobilenet",
     ):
         self.conf_thresh = conf_thresh
         self.img_size = img_size
@@ -20,15 +21,18 @@ class TrackByDetection:
         self.appearance_weight = appearance_weight
         self.frame_id = 0
         self.device = device
+        self.embedder = embedder
 
+        use_gpu = device != "cpu"
         self.tracker = DeepSort(
             max_age=30,
             n_init=3,
             max_cosine_distance=1 - appearance_weight,
             nn_budget=100,
             override_track_class=None,
-            embedder="mobilenet",
-            half=True,
+            embedder=embedder,
+            embedder_gpu=use_gpu,
+            half=use_gpu,  # half precision is a GPU optimization (mobilenet only)
         )
 
     def update(self, detections, frame):

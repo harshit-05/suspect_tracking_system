@@ -37,7 +37,7 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_path="results/optimization_log.csv", video_path="sample_videos/mot20-05sample.mp4"):
+def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_path="results/optimization_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
     global_best = None
     global_best_score = (-1, -1, float("inf"))  # MOTA, IDF1, 1/FPS
     particles = [sample_config(bounds) for _ in range(num_particles)]
@@ -46,7 +46,7 @@ def qpso_optimize(bounds, allowed_values, num_particles=20, generations=15, log_
         print(f"\n[QPSO] Generation {g+1}/{generations}")
         for i in tqdm(range(num_particles)):
             quantized = quantize_config(particles[i], allowed_values)
-            mota, idf1, fps = evaluate_pipeline(quantized, video_path=video_path)
+            mota, idf1, fps = evaluate_pipeline(quantized, video_path=video_path, embedder=embedder, device=device)
             log_to_csv(quantized, mota, idf1, fps, path=log_path)
             score = (mota, idf1, 1 / max(fps, 1e-3))
 

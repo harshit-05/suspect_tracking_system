@@ -27,7 +27,7 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def run_nsga(bounds, allowed_values, num_individuals=20, generations=50, log_path="results/nsga_log.csv", video_path="sample_videos/mot20-05sample.mp4"):
+def run_nsga(bounds, allowed_values, num_individuals=20, generations=50, log_path="results/nsga_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
     keys = list(bounds.keys())
 
     # Define DEAP toolbox
@@ -40,7 +40,7 @@ def run_nsga(bounds, allowed_values, num_individuals=20, generations=50, log_pat
 
     def evaluate(ind):
         config = decode_individual(ind, keys, allowed_values)
-        mota, idf1, fps = evaluate_pipeline(config, video_path=video_path)
+        mota, idf1, fps = evaluate_pipeline(config, video_path=video_path, embedder=embedder, device=device)
         log_to_csv(config, mota, idf1, fps, log_path)
         return mota, idf1, 1 / max(fps, 1e-3)
 

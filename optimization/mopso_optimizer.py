@@ -34,7 +34,7 @@ def log_to_csv(config, mota, idf1, fps, path):
         row.update({'MOTA': mota, 'IDF1': idf1, 'FPS': fps})
         writer.writerow(row)
 
-def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path="results/mopso_log.csv", video_path="sample_videos/mot20-05sample.mp4"):
+def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path="results/mopso_log.csv", video_path="sample_videos/mot20-05sample.mp4", embedder="mobilenet", device=None):
     particles = [sample_particle(bounds) for _ in range(num_particles)]
     velocities = [{k: 0.0 for k in bounds} for _ in range(num_particles)]
     personal_best = list(particles)
@@ -45,13 +45,13 @@ def run_mopso(bounds, allowed_values, num_particles=20, generations=50, log_path
         print(f"\n[MOPSO] Generation {gen + 1}/{generations}")
         for i in tqdm(range(num_particles)):
             config = quantize_config(particles[i], allowed_values)
-            mota, idf1, fps = evaluate_pipeline(config, video_path=video_path)
+            mota, idf1, fps = evaluate_pipeline(config, video_path=video_path, embedder=embedder, device=device)
             score = (mota, idf1, 1 / max(fps, 1e-3))
             log_to_csv(config, mota, idf1, fps, log_path)
 
             # Personal best update
             p_config = quantize_config(personal_best[i], allowed_values)
-            p_mota, p_idf1, p_fps = evaluate_pipeline(p_config, video_path=video_path)
+            p_mota, p_idf1, p_fps = evaluate_pipeline(p_config, video_path=video_path, embedder=embedder, device=device)
             p_score = (p_mota, p_idf1, 1 / max(p_fps, 1e-3))
             if score > p_score:
                 personal_best[i] = particles[i]

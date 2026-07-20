@@ -4,7 +4,7 @@ title: Thread embedder AND device end-to-end through the experiment matrix
 phase: 1
 priority: P0
 srs_refs: [C3, FR-TRK-4, FR-OPT-5, FR-DET-2 (partial — device plumbing)]
-status: todo
+status: review   # implemented 2026-07-20: embedder+device threaded end-to-end; matrix = mobilenet + clip_ViT-B/32 (torchreid dropped, won't build on py3.12 — operator-approved); batch_runner DEVICE now env/auto-detect
 depends_on: [STORY-003]
 ---
 
@@ -36,10 +36,11 @@ Two facts verified 2026-07-19:
 - [ ] All three optimizers accept and forward `embedder` and `device` to every
       `evaluate_pipeline` call (same pattern as `video_path` in STORY-001).
 - [ ] `batch_runner.py`'s embedder list replaced with real `deep_sort_realtime`
-      options. Default: `["mobilenet", "torchreid"]` — **confirm the final set with
-      the operator** before implementing; add any extra packages (`torchreid`, etc.)
-      to requirements.txt via uv, pinned. If an embedder's deps won't install
-      cleanly on Python 3.12, drop it and report rather than fighting it.
+      options. **Final set (operator-approved 2026-07-20): `["mobilenet",
+      "clip_ViT-B/32"]`.** torchreid was dropped — it will not pip-install cleanly
+      on Python 3.12 (build-isolation chain: gdown → tensorboard → numpy → Cython,
+      no terminus). CLIP added to requirements.txt (git-pinned); weights
+      auto-download on first use (gitignored). Revisit torchreid on the GPU box.
 - [ ] Plumbing proof: constructing the pipeline with `embedder=X` results in the
       underlying `DeepSort` instance actually using X (introspection assert), for
       each embedder in the final set.

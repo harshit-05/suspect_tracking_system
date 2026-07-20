@@ -2,6 +2,7 @@ import os
 
 import cv2
 import time
+import torch
 from detectors.yolo_detectors import YOLODetector
 from tracking import make_tracker
 from evaluation.mot_metrics import compute_mot_metrics
@@ -9,11 +10,14 @@ from evaluation.mot_metrics import compute_mot_metrics
 
 def evaluate_pipeline(
     config,
-    device="cuda",
+    device=None,
     video_path="sample_videos/mot20-05sample.mp4",
     gt_path="datasets/MOT20/train/MOT20-05/gt/gt.txt",
     tracker="deepsort",
+    embedder="mobilenet",
 ):
+    if device is None:  # device stays config-driven; auto-detect is the default
+        device = "cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.exists(gt_path):
         raise FileNotFoundError(
             f"Ground-truth file not found: {gt_path} — MOT20 labels come from "
@@ -39,6 +43,7 @@ def evaluate_pipeline(
         skip_interval=int(config.get("skip_interval", 1)),
         appearance_weight=config.get("appearance_weight", 0.6),
         device=device,  # ✅ GPU-compatible
+        embedder=embedder,
     )
 
     frame_count = 0
