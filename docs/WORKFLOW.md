@@ -11,10 +11,14 @@ references files in the repo, not this conversation.
 
 ## Roles
 
-- **Operator** — you. Reads diffs, approves or rejects checkpoints, decides when to
-  commit/push. Nothing merges without the operator's explicit go-ahead.
+- **Operator** — you. Reads diffs, approves or rejects checkpoints, and runs every git
+  command that changes state (see [`CLAUDE.md`](../CLAUDE.md)). Nothing merges without
+  the operator's explicit go-ahead.
 - **Agent** — whichever model/session is executing (Fable, Claude Code, etc). Implements
   exactly one story at a time, then stops.
+
+The hard rules live in [`CLAUDE.md`](../CLAUDE.md), which Claude Code loads into every
+session. Decisions that outlive a single story go in [`docs/ADR.md`](ADR.md).
 
 ## The loop
 
@@ -112,9 +116,10 @@ command.
 
 ```text
 You are implementing exactly one story from a sharded spec. Read these in order:
-1. docs/SRS.md — full spec, for context only. Do not implement beyond this story's scope.
-2. docs/WORKFLOW.md — the process you must follow (this file).
-3. docs/stories/STORY-0XX-<slug>.md — the story you are implementing now.
+1. CLAUDE.md — the hard rules (Claude Code loads it automatically; other agents read it).
+2. docs/SRS.md — full spec, for context only. Do not implement beyond this story's scope.
+3. docs/WORKFLOW.md — the process you must follow (this file).
+4. docs/stories/STORY-0XX-<slug>.md — the story you are implementing now.
 
 Rules:
 - **Rule 0 — re-validate before implementing:** read every file the story references
@@ -137,6 +142,8 @@ Rules:
 - When done, run the story's Verification command(s) and show me the output.
 - Update the story file's `status` frontmatter to `review` and update its row in
   docs/stories/BOARD.md.
+- Hand over the git recipe per CLAUDE.md (branch, the exact paths to add, a
+  Conventional Commits message with the IDs in a Refs: trailer) — and run none of it.
 - Stop. Do not start the next story without my explicit go-ahead.
 ```
 
@@ -158,8 +165,9 @@ Before approving, check:
       explicit sign-off — flag these as separate stories requiring confirmation, don't
       let an agent bundle them into a routine cleanup story
 
-**Approved →** commit (one commit per story is a good default), mark `done` in
-`docs/stories/BOARD.md`, move to the next `todo` story.
+**Approved →** run the agent's recipe (one PR per story; Conventional Commits, story
+ID in a `Refs:` trailer — see `CLAUDE.md`), mark `done` in `docs/stories/BOARD.md`,
+move to the next `todo` story.
 
 **Rejected →** leave status `in-progress`, give specific feedback, re-run the Stage C
 prompt in the same or a fresh session (the story file carries all the context needed —
@@ -198,6 +206,8 @@ order. **Order matters** — respect each story's `depends_on` frontmatter:
 5. `STORY-004` — fourcc fix (static verification only; runtime check deferred to the
    Phase-1 ByteTrack story).
 
-`STORY-001` is already `done` — it was found fully implemented in the working tree
-before dispatch. That discovery is why Stage C Rule 0 (re-validate against HEAD)
-exists.
+`STORY-001` is `done`: the first Stage C session implemented it. A cross-check minutes
+later misread those fresh, uncommitted edits as pre-existing drift — while also finding
+genuinely stale stories. Both halves of that episode are why Stage C Rule 0 (re-validate
+against HEAD, and check whether the current session made a change before calling it
+drift) exists; see `docs/ADR.md` ADR-003.
