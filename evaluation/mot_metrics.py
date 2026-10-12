@@ -1,59 +1,117 @@
-import numpy as np
-import motmetrics as mm
+"""Official MOTChallenge metrics — MOTA, IDF1 and HOTA — via ``trackers.eval``.
+
+``trackers.eval`` ports TrackEval (MOTChallenge's official evaluation code) for
+numerical parity, and ``evaluate_mot_sequence`` applies MOTChallenge
+preprocessing: ground truth is ``conf != 0`` pedestrians only, and a tracker box
+matched to a distractor ground-truth box is dropped instead of being counted as
+a false positive. ``scripts/trackeval_parity.py`` checks the parity against
+TrackEval itself (STORY-010, ADR-017).
+
+All three metrics are computed from identical inputs — the same ground-truth
+slice and the same tracker rows, one IoU threshold for CLEAR and Identity (HOTA
+sweeps its own) — so they can be compared with each other (ML-2).
+"""
+
+import re
+import tempfile
+from pathlib import Path
+
+from trackers.eval import evaluate_mot_sequence
+
+BENCHMARKS = ("MOT17", "MOT20")
+
+# MOT20 also ignores non_mot_vehicle (class 6): TrackEval does so for its MOT20
+# benchmark, but trackers.eval doesn't yet (a TODO in trackers/io/mot.py).
+# Relabelling those rows as class 8 (distractor) gets the same suppression
+# through the public API.
+_MOT20_NON_MOT_VEHICLE = 6
+_DISTRACTOR = 8
+_SEQUENCE_NAME = re.compile(r"(MOT17|MOT20)-\d{2}")
+
+# A row with a negative ID is an unconfirmed track, ignored by both trackers.eval
+# and TrackEval. It stands in for "no tracks at all", which trackers.eval cannot
+# read as an empty file — and an all-empty run is a valid (terrible) result for
+# a bad HPO config, so it must score 0, not crash.
+_PLACEHOLDER_ROW = "1,-1,0,0,1,1,1,-1,-1,-1"
 
 
-def load_mot_gt(gt_path):
-    """Parse a MOTChallenge gt.txt into {frame: (ids, xywh boxes)}.
+def infer_benchmark(gt_path):
+    """'MOT17' or 'MOT20', from the sequence folder in a MOTChallenge GT path
+    (``.../MOT20-05/gt/gt.txt``). Raises ValueError when there is none."""
+    for part in reversed(Path(gt_path).parts):
+        match = _SEQUENCE_NAME.match(part)
+        if match:
+            return match.group(1)
+    raise ValueError(
+        f"Can't infer the benchmark (MOT17 or MOT20) from GT path {gt_path}; "
+        "pass benchmark= explicitly"
+    )
 
-    Keeps only entries evaluated by the benchmark: conf == 1 and class == 1
-    (pedestrian). Coordinates stay in the file's 1-based pixel convention.
-    """
-    per_frame = {}
+
+def _write_gt_slice(gt_path, num_frames, benchmark, out_path):
+    """Copy the GT rows for frames 1..num_frames. trackers.eval scores every
+    frame up to the highest one in either file, so an unsliced full-sequence GT
+    would count every unprocessed frame as misses. Returns the row count."""
+    rows = []
     with open(gt_path) as f:
         for line in f:
             parts = line.strip().split(",")
-            if len(parts) < 8:
+            if len(parts) < 8 or int(float(parts[0])) > num_frames:
                 continue
-            frame, tid = int(parts[0]), int(parts[1])
-            x, y, w, h = (float(v) for v in parts[2:6])
-            conf, cls = int(float(parts[6])), int(float(parts[7]))
-            if conf != 1 or cls != 1:
-                continue
-            per_frame.setdefault(frame, []).append((tid, x, y, w, h))
-    return {
-        frame: (
-            np.array([r[0] for r in rows], dtype=int),
-            np.array([r[1:] for r in rows], dtype=float),
-        )
-        for frame, rows in per_frame.items()
-    }
+            if benchmark == "MOT20" and int(float(parts[7])) == _MOT20_NON_MOT_VEHICLE:
+                parts[7] = str(_DISTRACTOR)
+            rows.append(",".join(parts))
+    Path(out_path).write_text("\n".join(rows) + "\n")
+    return len(rows)
 
 
-def compute_mot_metrics(gt_path, tracks_by_frame, iou_max=0.5):
-    """Real MOTA and IDF1 for tracker output against MOTChallenge ground truth.
+def _write_tracks(tracks_by_frame, out_path):
+    """Tracker output as MOTChallenge rows. Tracker boxes are 0-based ltrb;
+    MOT files are 1-based xywh."""
+    rows = [
+        f"{frame},{tid},{x1 + 1},{y1 + 1},{x2 - x1},{y2 - y1},1,-1,-1,-1"
+        for frame, tracks in sorted(tracks_by_frame.items())
+        for tid, (x1, y1, x2, y2) in tracks
+    ]
+    Path(out_path).write_text("\n".join(rows or [_PLACEHOLDER_ROW]) + "\n")
+
+
+def compute_mot_metrics(gt_path, tracks_by_frame, num_frames=None, benchmark=None,
+                        iou_threshold=0.5):
+    """Score tracker output against MOTChallenge ground truth.
 
     tracks_by_frame: {frame (1-based): [(track_id, (x1, y1, x2, y2)), ...]}
+    num_frames: frames processed (default: the highest key in tracks_by_frame).
+    benchmark: 'MOT17' or 'MOT20' preprocessing rules (default: inferred from
+        gt_path).
 
-    Only frames present in tracks_by_frame enter the accumulator, so a clip
-    that is a prefix of the full sequence scores correctly against the full
-    gt.txt as well as against a sliced one.
+    Returns a dict with MOTA, IDF1, HOTA, DetA, AssA (fractions) and the IDSW,
+    FP, FN counts, plus the benchmark whose rules were applied.
     """
-    gt = load_mot_gt(gt_path)
-    if not gt:
-        raise ValueError(f"No evaluated GT entries parsed from: {gt_path}")
+    benchmark = benchmark or infer_benchmark(gt_path)
+    if benchmark not in BENCHMARKS:
+        raise ValueError(f"Unknown benchmark {benchmark!r}; choose from {BENCHMARKS}")
+    if num_frames is None:
+        num_frames = max(tracks_by_frame, default=0)
 
-    acc = mm.MOTAccumulator(auto_id=False)
-    empty = (np.empty(0, dtype=int), np.empty((0, 4)))
-    for frame, tracks in sorted(tracks_by_frame.items()):
-        gt_ids, gt_boxes = gt.get(frame, empty)
-        hyp_ids = [tid for tid, _ in tracks]
-        # tracker ltrb (0-based) -> MOT xywh (1-based)
-        hyp_boxes = np.array(
-            [[b[0] + 1, b[1] + 1, b[2] - b[0], b[3] - b[1]] for _, b in tracks],
-            dtype=float,
-        ).reshape(-1, 4)
-        dist = mm.distances.iou_matrix(gt_boxes, hyp_boxes, max_iou=iou_max)
-        acc.update(gt_ids.tolist(), hyp_ids, dist, frameid=frame)
+    with tempfile.TemporaryDirectory() as tmp:
+        gt_file, tracks_file = Path(tmp) / "gt.txt", Path(tmp) / "tracks.txt"
+        if _write_gt_slice(gt_path, num_frames, benchmark, gt_file) == 0:
+            raise ValueError(f"No ground truth in frames 1..{num_frames} of {gt_path}")
+        _write_tracks(tracks_by_frame, tracks_file)
+        result = evaluate_mot_sequence(
+            gt_file, tracks_file, metrics=["CLEAR", "HOTA", "Identity"],
+            threshold=iou_threshold,
+        )
 
-    summary = mm.metrics.create().compute(acc, metrics=["mota", "idf1"], name="eval")
-    return float(summary.loc["eval", "mota"]), float(summary.loc["eval", "idf1"])
+    return {
+        "MOTA": float(result.CLEAR.MOTA),
+        "IDF1": float(result.Identity.IDF1),
+        "HOTA": float(result.HOTA.HOTA),
+        "DetA": float(result.HOTA.DetA),
+        "AssA": float(result.HOTA.AssA),
+        "IDSW": int(result.CLEAR.IDSW),
+        "FP": int(result.CLEAR.CLR_FP),
+        "FN": int(result.CLEAR.CLR_FN),
+        "benchmark": benchmark,
+    }

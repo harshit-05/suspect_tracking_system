@@ -5,7 +5,7 @@ import time
 import torch
 from detectors.yolo_detectors import YOLODetector
 from tracking import make_tracker
-from evaluation.mot_metrics import compute_mot_metrics
+from evaluation.mot_metrics import compute_mot_metrics, infer_benchmark
 
 
 def evaluate_pipeline(
@@ -15,15 +15,40 @@ def evaluate_pipeline(
     gt_path="datasets/MOT20/train/MOT20-05/gt/gt.txt",
     tracker="deepsort",
     embedder="mobilenet",
+    benchmark=None,
 ):
+    """(MOTA, IDF1, FPS) — the optimizers' objective vector (FR-OPT-1).
+    evaluate_pipeline_metrics() returns every metric, HOTA included."""
+    metrics = evaluate_pipeline_metrics(
+        config, device=device, video_path=video_path, gt_path=gt_path,
+        tracker=tracker, embedder=embedder, benchmark=benchmark,
+    )
+    return metrics["MOTA"], metrics["IDF1"], metrics["FPS"]
+
+
+def evaluate_pipeline_metrics(
+    config,
+    device=None,
+    video_path="sample_videos/mot20-05sample.mp4",
+    gt_path="datasets/MOT20/train/MOT20-05/gt/gt.txt",
+    tracker="deepsort",
+    embedder="mobilenet",
+    benchmark=None,
+):
+    """Run the pipeline on a video and score it with the official MOTChallenge
+    rules. Returns a dict: MOTA, IDF1, HOTA, DetA, AssA, IDSW, FP, FN,
+    benchmark, FPS, frames — the precursor of Phase 2's EvalResult (FR-EVAL-4).
+    benchmark ('MOT17'/'MOT20') is inferred from gt_path when not given."""
     if device is None:  # device stays config-driven; auto-detect is the default
         device = "cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.exists(gt_path):
         raise FileNotFoundError(
-            f"Ground-truth file not found: {gt_path} — MOT20 labels come from "
-            "https://motchallenge.net/data/MOT20Labels.zip (mirror: TrackEval "
-            "data.zip at omnomnom.vision.rwth-aachen.de)"
+            f"Ground-truth file not found: {gt_path} — MOT20 labels come from the "
+            "TrackEval data bundle (omnomnom.vision.rwth-aachen.de/data/TrackEval/"
+            "data.zip); motchallenge.net is gone (HTTP 410)"
         )
+    # Fail before any model loads, not after the whole video has run
+    benchmark = benchmark or infer_benchmark(gt_path)
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise FileNotFoundError(f"Cannot open video: {video_path}")
@@ -71,6 +96,8 @@ def evaluate_pipeline(
         raise RuntimeError(f"No frames read from video: {video_path}")
 
     avg_fps = frame_count / total_time
-    mota, idf1 = compute_mot_metrics(gt_path, tracks_by_frame)
-
-    return mota, idf1, round(avg_fps, 3)
+    metrics = compute_mot_metrics(
+        gt_path, tracks_by_frame, num_frames=frame_count, benchmark=benchmark
+    )
+    metrics.update(FPS=round(avg_fps, 3), frames=frame_count)
+    return metrics

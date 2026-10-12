@@ -93,20 +93,25 @@ prototype through a spec-driven story loop.
 ## Checks (the whole suite, all fixture-based)
 
 ```bash
-.venv/bin/python -W ignore tests/smoke_test.py            # ~15 s: real MOTA/IDF1 on the fixture
+.venv/bin/python -W ignore tests/metrics_test.py          # ~3 s: official scoring rules (no model)
+.venv/bin/python -W ignore tests/smoke_test.py            # ~18 s: MOTA/IDF1/HOTA on the fixture
 .venv/bin/python -W ignore tests/tracker_contract_test.py # seconds: both trackers, one contract
 .venv/bin/python -W ignore tests/optimizer_test.py        # ~2 s: dominance, memo, seeds (no model)
 ```
 
 The scripts are pytest-compatible; pytest itself arrives with CI (Phase 2,
-DEV-1).
+DEV-1). After upgrading `trackers`, re-run `scripts/trackeval_parity.py`
+(throwaway-venv setup in its header) — it must still match TrackEval exactly.
 
 ## Layout facts
 
 - `tracking/` holds the tracker adapters and `make_tracker()`, the single
   construction point for demo and evaluator. It is **not** `trackers/`: that
   name is the pip package the ByteTrack adapter imports (ADR-010).
-- `evaluation/` — `evaluate_pipeline` and `mot_metrics.py` (motmetrics).
+- `evaluation/` — `evaluate_pipeline` (MOTA, IDF1, FPS: the optimizers'
+  objective), `evaluate_pipeline_metrics` (every metric, HOTA included), and
+  `mot_metrics.py`: official MOTChallenge scoring via `trackers.eval`. Pass
+  `benchmark=` when the GT path names no MOT17/MOT20 sequence (ADR-017).
   `optimization/objectives.py` — dominance, memoization, seeding (ADR-015).
 - `detectors/` still holds three near-duplicate modules until STORY-012.
 - `datasets/MOT20/train/MOT20-05/` (gitignored) holds the full GT, from the

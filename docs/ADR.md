@@ -35,7 +35,7 @@ says so.
 | [006](#adr-006-squash-unpushed-commits-to-keep-oversized-blobs-out-of-a-push) | Squash unpushed commits to keep oversized blobs out of a push | Accepted | 0 |
 | [007](#adr-007-uv-only-with-an-interim-exact-pinned-requirementstxt) | uv only, with an interim exact-pinned `requirements.txt` | Accepted (provisional) | 0 → 2 |
 | [008](#adr-008-a-50-frame-fixture-in-plain-git-and-a-two-minute-verification-rule) | A 50-frame fixture in plain git, and a two-minute verification rule | Accepted | 0 |
-| [009](#adr-009-real-motaidf1-via-motmetrics-proven-against-an-identity-oracle) | Real MOTA/IDF1 via motmetrics, proven against an identity oracle | Accepted (provisional) | 1 |
+| [009](#adr-009-real-motaidf1-via-motmetrics-proven-against-an-identity-oracle) | Real MOTA/IDF1 via motmetrics, proven against an identity oracle | Superseded by ADR-017 | 1 |
 | [010](#adr-010-bytetrack-from-roboflows-trackers-package-local-package-renamed-to-tracking) | ByteTrack from roboflow's `trackers` package; local package renamed to `tracking/` | Accepted | 1 |
 | [011](#adr-011-assert-properties-a-broken-system-cannot-satisfy-not-ranges) | Assert properties a broken system cannot satisfy, not ranges | Accepted | 1 |
 | [012](#adr-012-dont-optimize-a-metric-that-has-no-dynamic-range) | Don't optimize a metric that has no dynamic range | Accepted (provisional) | 1 |
@@ -43,6 +43,7 @@ says so.
 | [014](#adr-014-the-embedder-matrix-holds-only-embedders-that-install) | The embedder matrix holds only embedders that install | Accepted (provisional) | 1 |
 | [015](#adr-015-pareto-dominance-with-a-single-leader-rule-memoized-and-seeded) | Pareto dominance with a single-leader rule, memoized and seeded | Accepted (provisional) | 1 → 3 |
 | [016](#adr-016-one-rulebook-across-the-maintainers-projects) | One rulebook across the maintainer's projects | Accepted | Process |
+| [017](#adr-017-official-mot-metrics-via-trackerseval-with-trackeval-as-the-parity-oracle) | Official MOT metrics via trackers.eval, with TrackEval as the parity oracle | Accepted | 1 |
 
 ---
 
@@ -305,6 +306,14 @@ reason in the file (C4, ADR-010).
   fresh environment. The GPU box is a hosted notebook (ADR-013) that ships its
   own CUDA torch, so the GPU recipe will likely keep the platform's torch and
   install everything else — to be settled by that recipe's story.
+- *The floating-transitive risk happened (2026-10-11):* torch asks for
+  `setuptools>=77.0.3` with no upper bound. The July install resolved 78.1.0; a
+  fresh resolve now picks 84.0.0, and setuptools 81 removed `pkg_resources`,
+  which `deep_sort_realtime` imports when it builds its embedder. Every fresh
+  install — every Colab/Kaggle session — crashed DeepSORT on first use, while
+  the long-lived local venv kept working. STORY-010's cold install caught it;
+  `setuptools==78.1.0` is now pinned. The same story removed motmetrics
+  (ADR-017), leaving CLIP as the only git pin.
 
 **Alternatives considered.**
 
@@ -357,8 +366,11 @@ before you need it — every later story inherits it.
 
 ## ADR-009: Real MOTA/IDF1 via motmetrics, proven against an identity oracle
 
-**Status:** Accepted (provisional — the git pin goes when motmetrics releases a
-NumPy-2 build) · **Date:** 2026-07-19 · **Refs:** STORY-006, C1, FR-EVAL-1, ML-1
+> **Superseded by [ADR-017](#adr-017-official-mot-metrics-via-trackerseval-with-trackeval-as-the-parity-oracle)**
+> (STORY-010, 2026-10-11). motmetrics gave way to `trackers.eval`, which applies
+> MOTChallenge's official preprocessing — the step this entry's path lacked.
+
+**Status:** Superseded by ADR-017 · **Date:** 2026-07-19 · **Refs:** STORY-006, C1, FR-EVAL-1, ML-1
 
 **Context.** C1: the mock formula. FR-EVAL-1 names motmetrics or TrackEval.
 PyPI's `motmetrics==1.4.0` calls `np.asfarray`, which NumPy 2 removed (we run
@@ -694,6 +706,72 @@ RAG-only rules — LangChain, Ollama, the `corpus/` directory — were left out.
 
 **Lesson.** A process rule that lives in a chat transcript or an agent's memory
 is invisible to the next session. Put it where every session loads it.
+
+---
+
+## ADR-017: Official MOT metrics via trackers.eval, with TrackEval as the parity oracle
+
+**Status:** Accepted · **Date:** 2026-10-11 · **Refs:** STORY-010, C1, FR-EVAL-1,
+ML-1; supersedes ADR-009
+
+**Context.** FR-EVAL-1 needs HOTA as well as MOTA and IDF1, and STORY-010
+planned to add it through TrackEval. Checking first turned up three problems.
+TrackEval is MOTChallenge's official evaluation code, but it has been
+unmaintained since 2022-11-29 and is broken on NumPy 2 — even its MOT loader
+calls `np.float`, one of 81 uses of removed aliases. `trackers.eval`, pinned
+since STORY-007, ports TrackEval's CLEAR, HOTA and Identity code for numerical
+parity and applies MOTChallenge preprocessing. And ADR-009's motmetrics path
+had skipped that preprocessing: tracker boxes on people the benchmark marks as
+ignorable (static persons, reflections, people on vehicles) counted as false
+positives.
+
+**Decision** (operator: "best for the bigger picture"). All three metrics come
+from `trackers.eval.evaluate_mot_sequence`, wrapped in
+`evaluation/mot_metrics.py`. The wrapper handles four details:
+
+- It cuts the ground truth to the processed frames, because trackers.eval
+  scores up to the highest frame in either file.
+- It relabels MOT20's extra distractor (class 6, missing upstream) as class 8.
+- It infers the rule set from the sequence folder name, or takes it explicitly,
+  and raises `ValueError` if neither works.
+- It writes a zero-track run as one `id = -1` row, because an empty file
+  raises.
+
+`evaluate_pipeline` keeps returning `(MOTA, IDF1, FPS)` for the optimizers;
+`evaluate_pipeline_metrics` returns everything. TrackEval is only a test
+oracle: `scripts/trackeval_parity.py` runs it in a throwaway venv, with the
+three removed NumPy aliases restored for its sake. motmetrics is gone.
+
+**Consequences.**
+
+- *Pros:* parity is exact — 18 cases (two rule sets × identity, jitter, dropped
+  boxes, ID swaps, extra boxes, boxes on distractors, no tracks, and two real
+  tracker outputs), all with |Δ| = 0.0. The numbers now follow the official
+  protocol: on the fixture at 960 px, MOTA goes from 0.0324 to 0.0429, because
+  the old path counted boxes on ignorable people as false positives. IDF1 moves
+  from 0.0930 to 0.0937, and HOTA is 0.1480. The project has one git-pinned
+  dependency fewer, and gained none.
+- *Cons:* two upstream quirks are now our code — the ground-truth cut and the
+  class-6 relabel — each covered by `tests/metrics_test.py`. If trackers fixes
+  its MOT20 TODO, the relabel becomes redundant but stays harmless. Re-run the
+  parity script on every trackers upgrade. Each evaluation writes two temporary
+  files, which costs nothing next to a pipeline run.
+
+**Alternatives considered.**
+
+- *TrackEval at runtime* — unmaintained, needs NumPy patching in app code,
+  wants a folder layout on disk, and would be a git pin.
+- *Keep motmetrics and add HOTA from elsewhere* — two engines and two
+  protocols, and motmetrics' protocol isn't the official one.
+- *Call trackers' private `_prepare_mot_sequence` with in-memory arrays* — no
+  temporary files, but a private API breaks on any upgrade.
+
+**Lesson.** When you replace an implementation, keep the reference as an
+oracle, not a dependency; RAG_System's ADR-021 did the same with LangChain's
+loaders. Two libraries that compute "the same metric" can implement two
+different protocols, so compare their definitions — here, how they treat
+distractors — not just their function names. And treat a cold install as a
+test: this story's caught a dependency that had silently drifted (ADR-007).
 
 ---
 
