@@ -3,7 +3,7 @@ import os
 import cv2
 import time
 import torch
-from detectors.yolo_detectors import YOLODetector
+from detectors.yolo import YOLODetector
 from tracking import make_tracker
 from evaluation.mot_metrics import compute_mot_metrics, infer_benchmark
 
