@@ -4,7 +4,7 @@ title: Official MOT metrics (HOTA, MOTA, IDF1) via trackers.eval, with TrackEval
 phase: 1
 priority: P0
 srs_refs: [C1 (completion), FR-EVAL-1 (completes it), ML-1, TST-1, "TST-7 (seed)"]
-status: review   # implemented 2026-10-11: trackers.eval + official preprocessing; TrackEval parity exact (18/18, |Δ|=0); motmetrics removed; setuptools pinned (cold install)
+status: done   # implemented 2026-10-11 (trackers.eval + official preprocessing; parity exact, |Δ|=0; motmetrics removed; setuptools pinned); reviewed 2026-10-12, committed f9f0c65
 depends_on: [STORY-006]
 ---
 

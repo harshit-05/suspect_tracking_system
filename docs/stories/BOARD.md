@@ -28,7 +28,7 @@ deferred runtime check; STORY-006 supersedes STORY-005's mock-metrics caveat.
 | 2 | [STORY-007](STORY-007-bytetrack-via-supervision.md) | ByteTrack via roboflow trackers + tracker selection | P0 | C4, H2, FR-TRK-1..3, TST-4 | **done** (committed `9612260`) |
 | 3 | [STORY-008](STORY-008-thread-embedder-and-device.md) | Thread embedder AND device end-to-end | P0 | C3, FR-TRK-4, FR-OPT-5 | **done** (committed `28aadad`) |
 | 4 | [STORY-009](STORY-009-optimizer-scoring-fixes.md) | Pareto dominance, un-inverted FPS, memoization, seeds | P0 | H4, FR-OPT-1/4/6, NFR-PERF-1 | **done** (committed `7116171`) |
-| 5 | [STORY-010](STORY-010-hota-via-trackeval.md) | Official MOT metrics (HOTA, MOTA, IDF1) via trackers.eval; TrackEval as parity oracle — **rescoped 2026-10-11** | P0 | C1, FR-EVAL-1 (completes), ML-1 | review |
+| 5 | [STORY-010](STORY-010-hota-via-trackeval.md) | Official MOT metrics (HOTA, MOTA, IDF1) via trackers.eval; TrackEval as parity oracle — **rescoped 2026-10-11** | P0 | C1, FR-EVAL-1 (completes), ML-1 | **done** (committed `f9f0c65`) |
 | 6 | [STORY-012](STORY-012-single-detector-module.md) | One detector module + demo-file hygiene | P0 | H1, FR-DET-1 | todo |
 | 7 | [STORY-013](STORY-013-skip-interval-coast-semantics.md) | skip_interval coast semantics (then restore to HPO space) | P1 | M5, FR-TRK-5 | todo |
 | 8 | [STORY-014](STORY-014-mot17-data.md) | Acquire MOT17 via trackers.download_dataset — provenance, train/held-out pick, fixture | P0 | ML-4, NFR-REP-5, SEC-4 | todo |

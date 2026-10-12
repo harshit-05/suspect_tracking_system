@@ -37,8 +37,9 @@ natsort==8.4.0
 # included (found by STORY-010's cold install; the no-lockfile risk of ADR-007).
 setuptools==78.1.0
 # MOT metrics (MOTA, IDF1, HOTA) come from `trackers.eval`, pinned above — a
-# TrackEval port with parity checked by scripts/trackeval_parity.py. motmetrics
-# was removed in STORY-010 (ADR-017); TrackEval itself is never installed here.
+# TrackEval port with parity checked by scripts/trackeval_parity.py. The old
+# metrics library was removed in STORY-010 (ADR-017); TrackEval itself is never
+# installed here.
 
 # --- deliberately excluded ---
 # yolox: the original bytetrack wrapper called it with a wrong constructor and
