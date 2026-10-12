@@ -4,7 +4,7 @@ title: One detector module + demo-file hygiene
 phase: 1
 priority: P0
 srs_refs: [H1, FR-DET-1, FR-DET-2 (partial), NFR-MNT-3 (partial), L1 (partial)]
-status: review   # implemented 2026-10-12: detectors/yolo.py (no defaults), 3 copies deleted; dead code removed, AST-proven behavior-neutral; smoke numbers unchanged
+status: done   # implemented 2026-10-12: detectors/yolo.py (no defaults), 3 copies deleted; dead code removed, AST-proven behavior-neutral; smoke numbers unchanged; reviewed 2026-10-12, committed 60c16cc
 depends_on: [STORY-007]
 ---
 
@@ -27,7 +27,8 @@ tab-indented comment lines plus a "color cont" typo.
       name), exposing `YOLODetector` with **no default model name** — callers must
       pass it explicitly, killing silent default divergence (FR-DET-2 spirit).
 - [x] `main.py` and `evaluation/evaluation.py` import from it; `detectors.py`,
-      `yolo_detector.py`, `yolo_detectors.py` deleted via `git rm`.
+      `yolo_detector.py`, `yolo_detectors.py` deleted (staged by the operator, not
+      the agent — see Deviation from plan).
 - [x] Grep-verified: no import of the deleted modules anywhere.
 - [x] `main.py` dead commented blocks removed; `draw_utils.py` tabs → spaces, typo
       fixed. No behavior change in either.
