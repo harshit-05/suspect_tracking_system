@@ -2,13 +2,13 @@
 import os
 import cv2
 import time
-from detectors.yolo_detector import YOLODetector
+from detectors.yolo import YOLODetector
 import numpy as np
 
 from tracking import make_tracker
 from utils.draw_utils import draw_tracks, draw_metrics
 
-# --- Gloabal variable  to store suspect's id and last frame's tracks
+# --- Global variables to store the suspect's id and last frame's tracks
 suspect_id = None
 g_last_tracks = []
 
@@ -21,8 +21,6 @@ def select_suspect_callback(event, x, y, flags, param):
         clicked_on_person = False
         # Iterate over the tracks from the last frame
         for tid, bbox in g_last_tracks:
-            #            bbox = track.to_ltrb() # [x1, y1, x2, y2]
-            #            track_id = track.track_id
             # Check if the click was inside this track's bounding box
             if bbox[0] < x < bbox[2] and bbox[1] < y < bbox[3]:
                 if suspect_id == tid:
@@ -43,7 +41,9 @@ def select_suspect_callback(event, x, y, flags, param):
 
 # --- Paths (env-overridable until the Phase-2 CLI lands) ---
 model_name = "yolov8l.pt"
-input_path = os.environ.get("INPUT_PATH", os.path.join("sample_videos", "mot20-05sample.mp4"))
+input_path = os.environ.get(
+    "INPUT_PATH", os.path.join("sample_videos", "mot20-05sample.mp4")
+)
 output_path = os.environ.get("OUTPUT_PATH", os.path.join("results", "output.mp4"))
 os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
@@ -106,34 +106,11 @@ try:
         start = time.time()
 
         detections = detector.detect(frame)
-        # formatted_dets = [[*d[:4], d[4]] for d in detections if d[5] == 0]
         formatted_dets = np.array(
             [d[:5] for d in detections if d[5] == 0], dtype=np.float32
         )
-        """
-        formatted_dets = [
-            ([d[0], d[1], d[2] - d[0], d[3] - d[1]], d[4], "person")
-            for d in detections
-            if d[5] == 0
-        ]
-        """
-        """
-        formatted_dets = []
-        for d in detections:
-            if d[5] == 0:
-                x1, y1, x2, y2 = d[:4]
-                w, h = x2 - x1, y2 - y1
-                formatted_dets.append([[x1, y1, w, h], d[4]])
-        """
-        # tracker.update() used to return  list of track  objects
         tracks = tracker.update(formatted_dets, frame)
         end = time.time()
-        """
-        processed_tracks = []
-        for t in track_objects:
-            #t.to_ltrb() gets the bounding box in coordinate format
-            processed_tracks.append((t.track_id, t.to_ltrv()))
-        """
         # --- Updating global tracks for the callback
         g_last_tracks = tracks
         frame_count += 1
