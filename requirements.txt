@@ -31,9 +31,15 @@ matplotlib==3.11.1
 tqdm==4.69.0
 pyyaml==6.0.3
 natsort==8.4.0
-# PyPI motmetrics==1.4.0 uses np.asfarray (removed in NumPy 2) — pin the fixed
-# upstream commit until a release lands (STORY-006):
-motmetrics @ git+https://github.com/cheind/py-motmetrics@e5ae766fab03b804f485d7c95ee1809b94d32dcc
+# deep_sort_realtime's embedder imports pkg_resources, which setuptools removed in
+# v81. torch only asks for setuptools>=77.0.3, so without this pin a fresh install
+# floats to 84+ and DeepSORT crashes on first use — every Colab/Kaggle session
+# included (found by STORY-010's cold install; the no-lockfile risk of ADR-007).
+setuptools==78.1.0
+# MOT metrics (MOTA, IDF1, HOTA) come from `trackers.eval`, pinned above — a
+# TrackEval port with parity checked by scripts/trackeval_parity.py. The old
+# metrics library was removed in STORY-010 (ADR-017); TrackEval itself is never
+# installed here.
 
 # --- deliberately excluded ---
 # yolox: the original bytetrack wrapper called it with a wrong constructor and
