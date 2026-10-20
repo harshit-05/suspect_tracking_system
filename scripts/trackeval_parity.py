@@ -19,6 +19,15 @@ equal requirements.txt:
 The hypotheses are synthetic perturbations of the ground truth (each one aimed
 at a different part of the metrics) plus any real tracker output passed with
 --tracks. Every coordinate is an integer, so both sides read identical boxes.
+
+Real tracker output comes from an actual pipeline run, which needs torch and
+the models — the project venv, not this one. Generate it there first with
+scripts/dump_tracks.py, then pass the files here:
+
+    .venv/bin/python -W ignore scripts/dump_tracks.py --video tests/data/MOT17-04-tiny.mp4 \\
+        --gt tests/data/MOT17-04-tiny_gt.txt --img-size 320 --out /tmp/t320.txt
+    /tmp/parity-venv/bin/python -I scripts/trackeval_parity.py \\
+        --gt tests/data/MOT17-04-tiny_gt.txt --rules MOT17 --tracks /tmp/t320.txt
 """
 
 import argparse

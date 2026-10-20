@@ -54,7 +54,13 @@ story's two-minute check. The checks themselves are cheap:
 ```bash
 .venv/bin/python -I scripts/mot17_provenance.py               # lengths, images, every GT row; sha256
 ls -la tests/data/MOT17-04-tiny*                              # < 10 MB
-<parity-venv>/bin/python -I scripts/trackeval_parity.py --gt tests/data/MOT17-04-tiny_gt.txt --rules MOT17
+# real tracker output first (project venv, ~2 min with the 960 px run), then all 9 cases
+.venv/bin/python -W ignore scripts/dump_tracks.py --video tests/data/MOT17-04-tiny.mp4 \
+  --gt tests/data/MOT17-04-tiny_gt.txt --img-size 320 --out /tmp/t320.txt
+.venv/bin/python -W ignore scripts/dump_tracks.py --video tests/data/MOT17-04-tiny.mp4 \
+  --gt tests/data/MOT17-04-tiny_gt.txt --img-size 960 --out /tmp/t960.txt
+<parity-venv>/bin/python -I scripts/trackeval_parity.py --gt tests/data/MOT17-04-tiny_gt.txt \
+  --rules MOT17 --tracks /tmp/t320.txt /tmp/t960.txt
 ```
 
 ## Record (2026-10-20)
@@ -122,6 +128,22 @@ The video is H.264 High, yuvj420p, 50 frames at 30 fps, encoded through libavfor
 was not recorded, so regenerate it from those properties, then check that frame *n* is
 closest to source `img1/{n:06d}.jpg` (the review's alignment check).
 
+*Resolved in the review follow-up (2026-10-20):* these are the exact commands. Re-run
+on ffmpeg n9.0.2, they rebuild both files byte for byte. (`yuvj420p` is how decoders
+report a `yuv420p` stream flagged full range, which the JPEG source frames are.)
+
+```bash
+SRC=datasets/MOT17/mot17/train/MOT17-04-FRCNN
+ffmpeg -hide_banner -loglevel error -framerate 30 -start_number 1 -i "$SRC/img1/%06d.jpg" \
+  -frames:v 50 -c:v libx264 -crf 28 -pix_fmt yuv420p -y tests/data/MOT17-04-tiny.mp4
+awk -F, '$1 <= 50' "$SRC/gt/gt.txt" > tests/data/MOT17-04-tiny_gt.txt
+```
+
+```text
+45bfe09eb1fc73acfe21fe0f53bc43c540bf341fc46db18253276a5590eb0f11  tests/data/MOT17-04-tiny.mp4
+4234d5d3c481de7b006302447224fae301438cb48b30b47e716180036f8092e9  tests/data/MOT17-04-tiny_gt.txt
+```
+
 **Parity** (TrackEval, MOT17 rules), exact (|Δ| = 0.0) in every case:
 
 - MOT17-02 train half — 7 synthetic cases. Picked for having the most distractor rows
@@ -129,6 +151,10 @@ closest to source `img1/{n:06d}.jpg` (the review's alignment check).
 - The MOT17-04 fixture — 7 synthetic cases. (The implementing session also scored two
   real tracker outputs, but those files were not kept and nothing in the repo
   regenerates them, so the review reproduced only the 7 synthetic cases.)
+  - *Resolved in the review follow-up (2026-10-20):* `scripts/dump_tracks.py`
+    regenerates them from the pipeline run itself. Its 320 and 960 px outputs are byte
+    for byte the files the original run used, and they reproduce the recorded metrics
+    exactly. The full 9-case parity (7 synthetic + 2 real) passes with |Δ| = 0.0.
 
 ## Deviation from plan
 
