@@ -30,9 +30,9 @@ deferred runtime check; STORY-006 supersedes STORY-005's mock-metrics caveat.
 | 4 | [STORY-009](STORY-009-optimizer-scoring-fixes.md) | Pareto dominance, un-inverted FPS, memoization, seeds | P0 | H4, FR-OPT-1/4/6, NFR-PERF-1 | **done** (committed `7116171`) |
 | 5 | [STORY-010](STORY-010-hota-via-trackeval.md) | Official MOT metrics (HOTA, MOTA, IDF1) via trackers.eval; TrackEval as parity oracle — **rescoped 2026-10-11** | P0 | C1, FR-EVAL-1 (completes), ML-1 | **done** (committed `f9f0c65`) |
 | 6 | [STORY-012](STORY-012-single-detector-module.md) | One detector module + demo-file hygiene | P0 | H1, FR-DET-1 | **done** (committed `60c16cc`) |
-| 7 | [STORY-013](STORY-013-skip-interval-coast-semantics.md) | skip_interval coast semantics (then restore to HPO space) | P1 | M5, FR-TRK-5 | todo |
-| 8 | [STORY-014](STORY-014-mot17-data.md) | Acquire MOT17 via trackers.download_dataset — provenance, train/held-out pick, fixture | P0 | ML-4, NFR-REP-5, SEC-4 | todo |
-| 9 | [STORY-011](STORY-011-sanity-combo-run.md) | Sanity end-to-end combo run (small budget; **gated on STORY-014's MOT17 data**) | P0 | Phase 1.9, ML-1, TST-5 | todo |
+| 7 | [STORY-014](STORY-014-mot17-data.md) | Acquire MOT17 via trackers.download_dataset — provenance, train/held-out pick, fixture | P0 | ML-4, NFR-REP-5, SEC-4 | **done** (committed `a01ad8d`) |
+| 8 | [STORY-013](STORY-013-skip-interval-coast-semantics.md) | skip_interval coast semantics (then restore to HPO space) — after 014: its MOTA check needs MOT17's dynamic range | P1 | M5, FR-TRK-5 | todo |
+| 9 | [STORY-011](STORY-011-sanity-combo-run.md) | Sanity end-to-end combo run (small budget, MOT17-04 fixture) | P0 | Phase 1.9, ML-1, TST-5 | todo |
 
 ## Phase 2 — Restructure to target architecture
 

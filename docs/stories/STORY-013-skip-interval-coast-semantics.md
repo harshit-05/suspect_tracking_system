@@ -26,7 +26,9 @@ restores the parameter.
       the **detector** is not run; the tracker still advances and reports its
       predicted/coasting tracks (DeepSORT: Kalman predict; ByteTrack: update with
       empty detections and keep unexpired tracks reported).
-- [ ] Test: on the fixture with `skip_interval=2`, every frame still has tracks
+- [ ] Test: on the **MOT17-04 fixture** (`tests/data/MOT17-04-tiny.*`, STORY-014 —
+      the MOT20 fixture's MOTA has no range to degrade, ADR-012) with
+      `skip_interval=2`, every frame still has tracks
       once established (no empty-track frames after warm-up), and MOTA degrades
       gracefully vs `skip_interval=1` instead of collapsing.
 - [ ] `skip_interval` restored to the search space (as an integer range) with the
