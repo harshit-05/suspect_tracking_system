@@ -102,6 +102,9 @@ prototype through a spec-driven story loop.
 The scripts are pytest-compatible; pytest itself arrives with CI (Phase 2,
 DEV-1). After upgrading `trackers`, re-run `scripts/trackeval_parity.py`
 (throwaway-venv setup in its header) — it must still match TrackEval exactly.
+Its real-tracker cases need inputs from an actual run: generate them in `.venv`
+with `scripts/dump_tracks.py` first. Nothing a check depends on may live only in
+the scratchpad.
 
 ## Layout facts
 
