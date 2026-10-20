@@ -4,7 +4,7 @@ title: Acquire MOT17 via trackers.download_dataset — provenance check, train/h
 phase: 1
 priority: P0
 srs_refs: [ML-4, NFR-REP-5, SEC-4, "STORY-011 gate (ADR-012)"]
-status: review   # implemented 2026-10-20: MOT17 (Roboflow half split) verified row-for-row vs TrackEval bundle; tune MOT17-04, hold out 04+13 val halves; fixture + exact parity; STORY-011 gate lifted
+status: done   # implemented 2026-10-20: MOT17 (Roboflow half split) verified row-for-row vs TrackEval bundle; tune MOT17-04, hold out 04+13 val halves; fixture + exact parity; STORY-011 gate lifted; reviewed 2026-10-20, committed a01ad8d
 depends_on: [STORY-010]
 ---
 
@@ -112,11 +112,23 @@ sequence, so the MOT17 rules are inferred. On it, the metrics move with configur
 MOTA 0.153 / IDF1 0.296 / HOTA 0.357 at 320 px (2.36 FPS), and 0.347 / 0.535 / 0.520 at
 960 px (0.53 FPS).
 
+The config behind those numbers is the smoke test's: `conf_thresh` 0.3, `iou_thresh`
+0.5, `skip_interval` 1, `img_size` 320 or 960, with the default tracker (DeepSORT) and
+embedder. The review re-ran both (2026-10-20) and got 0.1534 / 0.2958 / 0.3568 and
+0.3466 / 0.535 / 0.5198, at 2.46 and 0.54 FPS.
+
+The video is H.264 High, yuvj420p, 50 frames at 30 fps, encoded through libavformat
+(Lavf 63.1.102) from frames 1-50 of the MOT17-04 train half. The exact ffmpeg command
+was not recorded, so regenerate it from those properties, then check that frame *n* is
+closest to source `img1/{n:06d}.jpg` (the review's alignment check).
+
 **Parity** (TrackEval, MOT17 rules), exact (|Δ| = 0.0) in every case:
 
 - MOT17-02 train half — 7 synthetic cases. Picked for having the most distractor rows
   (8,020); this was the operator's refinement.
-- The MOT17-04 fixture — 7 synthetic cases plus the two real tracker outputs above.
+- The MOT17-04 fixture — 7 synthetic cases. (The implementing session also scored two
+  real tracker outputs, but those files were not kept and nothing in the repo
+  regenerates them, so the review reproduced only the 7 synthetic cases.)
 
 ## Deviation from plan
 
