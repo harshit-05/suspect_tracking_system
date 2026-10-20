@@ -113,7 +113,9 @@ DEV-1). After upgrading `trackers`, re-run `scripts/trackeval_parity.py`
   `mot_metrics.py`: official MOTChallenge scoring via `trackers.eval`. Pass
   `benchmark=` when the GT path names no MOT17/MOT20 sequence (ADR-017).
   `optimization/objectives.py` — dominance, memoization, seeding (ADR-015).
-- `detectors/` still holds three near-duplicate modules until STORY-012.
+- `detectors/yolo.py` is the only detector (STORY-012). `model_name`,
+  `img_size` and `conf_thresh` are required keywords — never give them
+  defaults again; that is where the three old copies drifted (H1).
 - `datasets/MOT20/train/MOT20-05/` (gitignored) holds the full GT, from the
   TrackEval bundle (`omnomnom.vision.rwth-aachen.de/data/TrackEval/data.zip` —
   GT only, no images).
