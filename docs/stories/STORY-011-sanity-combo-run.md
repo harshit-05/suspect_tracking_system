@@ -10,15 +10,14 @@ depends_on: [STORY-006, STORY-008, STORY-009]
 
 ## Context
 
-**Gate added by operator review 2026-07-20:** measured recall of stock YOLOv8l on
-MOT20-05 frame 1 is 0.9–4.2% (img_size 320→960) — the crowd is too dense, so
-MOTA/IDF1 are noise-floored near zero and HPO on this footage optimizes noise.
-Before this story runs, acquire a **sparser MOTChallenge sequence** (MOT17-04 or
-MOT17-09: video + GT + fixture slice, mirroring STORY-005/006's process) and run the
-combo on that. motchallenge.net was down 2026-07-19/20; the TrackEval bundle
-(already in scratchpad/datasets) has MOT17 GT but **not** images — images need
-motchallenge.net's return or a mirror. MOT20-05 full-res behavior gets re-checked
-on the GPU box later.
+**Gate lifted by STORY-014 (2026-10-20, ADR-018).** MOT20-05 is too dense for stock
+YOLO at CPU sizes (1–4 % recall, ADR-012), so this story runs on the **MOT17-04
+fixture**: `tests/data/MOT17-04-tiny.mp4` + `tests/data/MOT17-04-tiny_gt.txt` (first
+50 frames of the tuning sequence; MOT17 rules are inferred from the filename). There
+the metrics have range — MOTA 0.153 → 0.347, IDF1 0.296 → 0.535 from 320 to 960 px —
+and trade off against speed (2.36 → 0.53 FPS). The full sequences live in
+`datasets/MOT17/` (tuning: MOT17-04 train half; held out: MOT17-04 and MOT17-13 val
+halves). MOT20-05 full-resolution behaviour gets re-checked on the GPU box later.
 
 SRS §13 Phase 1 step 9: "Re-run one full combo and sanity-check outputs by eye before
 re-running the matrix." This is the first time detector→tracker→**real metrics**→
@@ -33,7 +32,7 @@ commits.
       **4 particles × 2 generations**, fixture video + fixture GT, fixed seed.
 - [ ] Outputs land in `results/` (old layout is fine — per-run manifest dirs are
       Phase 2): eval log CSV with one row per evaluation including real
-      MOTA/IDF1/(HOTA if STORY-010 landed)/FPS, and a best-config metrics JSON.
+      MOTA/IDF1/HOTA/FPS, and a best-config metrics JSON.
 - [ ] Log inspection confirms, and the report shows: (a) number of distinct
       evaluations ≤ distinct quantized configs (memoization observable in the wild),
       (b) no `0.001` FPS or mock-formula values (no MOTA that equals
@@ -53,9 +52,11 @@ commits.
 
 Drive through `batch_runner.run_combo` if its coupling allows a small-budget
 override; otherwise a 20-line script calling `qpso_optimize` directly with the
-fixture paths and tiny budget. Expected wall time: 8–16 evals × ~16 s ≈ 2–4 min on
-this CPU — slightly over the 2-minute rule, accepted for this one integration story
-(note it in the report).
+fixture paths and tiny budget. Expected wall time, re-estimated for the full-HD MOT17
+fixture (STORY-014 measured ~21 s per evaluation at 320 px, ~95 s at 960): 8 particle
+visits, fewer real evaluations after memoization, ≈ 3–8 min depending on how many land
+on 960 px. Over the 2-minute rule — accepted for this one integration story; say so
+in the report, with the actual time.
 
 ## Verification
 

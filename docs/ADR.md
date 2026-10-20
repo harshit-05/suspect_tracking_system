@@ -38,12 +38,13 @@ says so.
 | [009](#adr-009-real-motaidf1-via-motmetrics-proven-against-an-identity-oracle) | Real MOTA/IDF1 via motmetrics, proven against an identity oracle | Superseded by ADR-017 | 1 |
 | [010](#adr-010-bytetrack-from-roboflows-trackers-package-local-package-renamed-to-tracking) | ByteTrack from roboflow's `trackers` package; local package renamed to `tracking/` | Accepted | 1 |
 | [011](#adr-011-assert-properties-a-broken-system-cannot-satisfy-not-ranges) | Assert properties a broken system cannot satisfy, not ranges | Accepted | 1 |
-| [012](#adr-012-dont-optimize-a-metric-that-has-no-dynamic-range) | Don't optimize a metric that has no dynamic range | Accepted (provisional) | 1 |
+| [012](#adr-012-dont-optimize-a-metric-that-has-no-dynamic-range) | Don't optimize a metric that has no dynamic range | Accepted (gate met by ADR-018) | 1 |
 | [013](#adr-013-device-is-configuration-never-code) | Device is configuration, never code | Accepted | 1 |
 | [014](#adr-014-the-embedder-matrix-holds-only-embedders-that-install) | The embedder matrix holds only embedders that install | Accepted (provisional) | 1 |
 | [015](#adr-015-pareto-dominance-with-a-single-leader-rule-memoized-and-seeded) | Pareto dominance with a single-leader rule, memoized and seeded | Accepted (provisional) | 1 → 3 |
 | [016](#adr-016-one-rulebook-across-the-maintainers-projects) | One rulebook across the maintainer's projects | Accepted | Process |
 | [017](#adr-017-official-mot-metrics-via-trackerseval-with-trackeval-as-the-parity-oracle) | Official MOT metrics via trackers.eval, with TrackEval as the parity oracle | Accepted | 1 |
+| [018](#adr-018-mot17-from-a-verified-third-party-copy-tuned-on-one-half-reported-on-held-out-halves) | MOT17 from a verified third-party copy; tuned on one half, reported on held-out halves | Accepted | 1 |
 
 ---
 
@@ -498,7 +499,8 @@ broken system cannot have, then assert that.
 
 ## ADR-012: Don't optimize a metric that has no dynamic range
 
-**Status:** Accepted (provisional — until a sparser sequence is in place) ·
+**Status:** Accepted — the provisional gate was met on 2026-10-20 (STORY-014,
+ADR-018): on the MOT17-04 fixture, MOTA moves from 0.153 to 0.347 with image size ·
 **Date:** 2026-07-20 · **Refs:** `406adbe`, STORY-011, STORY-013, M5, ML-4
 
 **Context.** The operator measured stock YOLOv8-l's recall on MOT20-05 frame 1
@@ -772,6 +774,67 @@ loaders. Two libraries that compute "the same metric" can implement two
 different protocols, so compare their definitions — here, how they treat
 distractors — not just their function names. And treat a cold install as a
 test: this story's caught a dependency that had silently drifted (ADR-007).
+
+---
+
+## ADR-018: MOT17 from a verified third-party copy; tuned on one half, reported on held-out halves
+
+**Status:** Accepted · **Date:** 2026-10-20 · **Refs:** STORY-014, ADR-012, ML-4,
+NFR-REP-5, SEC-4
+
+**Context.** ADR-012 gated every metric-bearing HPO run on a sequence where stock
+YOLO can see people; on MOT20-05 it sees 1–4 %. motchallenge.net is gone (HTTP 410
+since at least 2026-10-11). The roboflow `trackers` package, already pinned, downloads
+MOT17 from Roboflow's own storage — a third-party copy. Its "train" and "val" turned out
+to be ByteTrack's half split: the first and second halves of the same seven training
+sequences, not different sequences.
+
+**Decision.** Use that copy, but only after checking it against an independent copy
+of the official ground truth: the TrackEval bundle from RWTH Aachen, the lab behind
+MOTChallenge. `scripts/mot17_provenance.py` checks lengths, image counts and every
+ground-truth row after the half-split frame offset, and records the sha256 of every
+archive. The protocol (ML-4):
+
+- **Tune on MOT17-04, train half.** Its recall roughly doubles with image size
+  (21 → 44 %), so the search space can move the metric.
+- **Report on two val halves that tuning never sees:**
+  - **MOT17-04 val half** — the literature's half-val protocol.
+  - **MOT17-13 val half** — an unseen scene, with the closest recall profile.
+- **Fixture:** the first 50 frames of MOT17-04.
+
+Archives that must survive go in the gitignored `datasets/_sources/`, never in the
+scratchpad, which lives in RAM-backed `/tmp`.
+
+**Consequences.**
+
+- *Pros:* metrics with dynamic range on real data — on the fixture, MOTA goes from
+  0.153 to 0.347 and IDF1 from 0.296 to 0.535 from 320 to 960 px, while FPS drops from
+  2.36 to 0.53. That is the trade-off a multi-objective optimizer exists to explore.
+  The copy is verified row by row, and TrackEval parity stays exact on it.
+  Half-val numbers are comparable with published trackers.
+- *Cons:* the data lives in a marketing bucket (`com-roboflow-marketing`) that could
+  disappear as motchallenge.net did; the sha256 record lets any future copy be checked.
+  Frames can't be checked pixel by pixel, only ground truth row by row plus
+  frame-to-label alignment by eye. Half-val shares scenes between tuning and
+  reporting, which is why MOT17-13 is held out as well. MOT17 is sparser than the dense
+  crowds CCTV can produce; the full-resolution MOT20 check on the GPU box still stands.
+
+**Alternatives considered.**
+
+- *Wait for motchallenge.net* — gone.
+- *Unofficial uploads (Kaggle and similar)* — no better provenance, and a separate
+  download path to maintain.
+- *Stay on MOT20-05* — optimizing noise (ADR-012).
+- *A crowd-trained detector to rescue MOT20 now* — weight provenance and validation
+  first; still a candidate, once there are numbers to compare against.
+- *Tune on MOT17-09, 05 or 11* — their recall barely moves with image size, so
+  `img_size` would be noise to the optimizer there.
+
+**Lesson.** A third-party copy of a benchmark is fine once it is checked against an
+independent copy of the ground truth — trust the check, not the mirror. Read a
+dataset's split semantics before calling anything "held out": here "val" meant "the
+other half of the same scenes". And pick the tuning data by whether the search space
+can actually move the metric on it.
 
 ---
 

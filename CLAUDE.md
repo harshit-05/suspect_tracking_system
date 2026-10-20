@@ -119,6 +119,15 @@ DEV-1). After upgrading `trackers`, re-run `scripts/trackeval_parity.py`
 - `datasets/MOT20/train/MOT20-05/` (gitignored) holds the full GT, from the
   TrackEval bundle (`omnomnom.vision.rwth-aachen.de/data/TrackEval/data.zip` —
   GT only, no images).
+- `datasets/MOT17/mot17/{train,val}/<SEQ>-FRCNN/` (gitignored) holds MOT17 frames +
+  GT from `trackers.download_dataset`: ByteTrack's half split, **train and val are
+  halves of the same seven sequences**. Verified against the TrackEval bundle,
+  kept at `datasets/_sources/trackeval/data.zip`, by `scripts/mot17_provenance.py`.
+  Tune on MOT17-04's train half; report on the MOT17-04 and MOT17-13 val halves
+  (ADR-018).
+- **Use the MOT17-04 fixture** (`tests/data/MOT17-04-tiny.*`) for any check where
+  metric *values* matter — the MOT20 fixture has no range (ADR-012).
+  `scripts/detector_recall.py` measures detector recall per sequence and size.
 
 ## Environment facts (verified 2026-10-11)
 
@@ -128,10 +137,14 @@ DEV-1). After upgrading `trackers`, re-run `scripts/trackeval_parity.py`
   15 GB RAM. ffmpeg 9.0.2 is available. `DISPLAY=:1` exists; `main.py` runs
   headless when `DISPLAY` is unset.
 - `gh` 2.101.0, authenticated as `harshit-05`, token has `workflow` scope.
-- motchallenge.net answered **HTTP 410 Gone** on 2026-10-11. Sequence images
-  (STORY-011's MOT17 gate) need another source.
+- motchallenge.net answered **HTTP 410 Gone** on 2026-10-11; MOT17 comes from
+  Roboflow's copy via `trackers.download_dataset`, verified (ADR-018). On this
+  connection the ~830 MB MOT17 download took about 8 minutes.
 - MOT20-05 is too dense for stock YOLO at CPU image sizes (1–4 % recall):
   MOTA/IDF1 on it are mechanics checks, not quality comparisons (ADR-012).
+- **The scratchpad lives on `/tmp`, a RAM tmpfs that a reboot wipes.** Anything that
+  must survive — downloads, archives, venvs worth keeping — goes in the gitignored
+  `datasets/` (`datasets/_sources/` for archives), not the scratchpad.
 
 ## GPU policy
 
